@@ -14,9 +14,9 @@ class LoginViewModel: ObservableObject {
     @Published var token: String?
     @Published var isAuthenticated = false
     @Published var loginMessage: String?
-
+    
     private let service = VitesseRHService()
-
+    
     func login() {
         guard isEmailValid(email) else {
             loginMessage = "Veuillez entrer une adresse e-mail valide."
@@ -39,12 +39,12 @@ class LoginViewModel: ObservableObject {
             }
         }
     }
-
+    
     private func isEmailValid(_ email: String) -> Bool {
         let emailRegex = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
         return NSPredicate(format: "SELF MATCHES %@", emailRegex).evaluate(with: email)
     }
-
+    
     private func isPasswordValid(_ password: String) -> Bool {
         return password.count >= 6
     }

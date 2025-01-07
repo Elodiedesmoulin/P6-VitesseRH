@@ -11,9 +11,9 @@ class DetailViewModel: ObservableObject {
     @Published var candidate: Candidate?
     @Published var errorMessage: String?
     
-     var service: VitesseRHService
-     var token: String
-     var candidateId: String
+    var service: VitesseRHService
+    var token: String
+    var candidateId: String
     
     init(service: VitesseRHService = VitesseRHService(), token: String, candidateId: String) {
         self.service = service

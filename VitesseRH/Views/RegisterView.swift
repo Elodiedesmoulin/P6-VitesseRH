@@ -9,7 +9,7 @@ import SwiftUI
 
 struct RegisterView: View {
     @StateObject private var viewModel = RegisterViewModel()
-
+    
     var body: some View {
         VStack {
             TextField("First Name", text: $viewModel.firstName)
@@ -24,17 +24,17 @@ struct RegisterView: View {
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
                 .autocapitalization(.none)
-
+            
             SecureField("Password", text: $viewModel.password)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
                 .autocapitalization(.none)
-
+            
             SecureField("Confirm Password", text: $viewModel.confirmPassword)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
                 .autocapitalization(.none)
-
+            
             
             Button("Register") {
                 viewModel.register()

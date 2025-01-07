@@ -55,7 +55,7 @@ struct CandidateListView: View {
             .padding()
             .onAppear {
                 viewModel.fetchCandidates()
-                    }
+            }
         }
     }
     

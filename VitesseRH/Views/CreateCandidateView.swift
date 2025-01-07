@@ -45,7 +45,7 @@ struct CreateCandidateView: View {
                     linkedinURL: nil,
                     isFavorite: false
                 )
-                viewModel.addCandidate(newCandidate)  
+                viewModel.addCandidate(newCandidate)
             }) {
                 Text("Save")
                     .font(.headline)
