@@ -13,6 +13,9 @@ class CandidateListViewModel: ObservableObject {
     @Published var filteredCandidates = [Candidate]()
     @Published var errorMessage: String?
     
+    @Published var searchText: String = ""
+    @Published var showFavoritesOnly: Bool = false
+    
     private let service: VitesseRHService
     private var token: String
     private var cancellables = Set<AnyCancellable>()
@@ -41,11 +44,15 @@ class CandidateListViewModel: ObservableObject {
     }
     
     func toggleFavorite(for candidate: Candidate) {
-        
         Task {
             do {
                 try await service.toggleFavoriteStatus(token: token, candidateId: candidate.id)
-                fetchCandidates()
+                
+                if let index = candidates.firstIndex(where: { $0.id == candidate.id }) {
+                    candidates[index].isFavorite.toggle()
+                }
+                
+                filterCandidates(by: searchText, showFavoritesOnly: showFavoritesOnly)
             } catch {
                 DispatchQueue.main.async {
                     self.errorMessage = "Failed to update favorite status."
@@ -54,14 +61,17 @@ class CandidateListViewModel: ObservableObject {
         }
     }
     
-    func filterCandidates(by searchText: String) {
-            if searchText.isEmpty {
-                filteredCandidates = candidates
-            } else {
-                filteredCandidates = candidates.filter { candidate in
-                    candidate.lastName.lowercased().contains(searchText.lowercased()) ||
-                    candidate.firstName.lowercased().contains(searchText.lowercased())
-                }
-            }
+    
+    func filterCandidates(by searchText: String, showFavoritesOnly: Bool) {
+        filteredCandidates = candidates.filter { candidate in
+            let matchesSearchText = searchText.isEmpty || candidate.firstName.lowercased().contains(searchText.lowercased()) || candidate.lastName.lowercased().contains(searchText.lowercased())
+            
+            let matchesFavorites = !showFavoritesOnly || candidate.isFavorite
+            
+            return matchesSearchText && matchesFavorites
         }
+    }
+    
+    
+
 }
