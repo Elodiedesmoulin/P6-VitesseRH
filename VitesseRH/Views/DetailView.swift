@@ -38,10 +38,8 @@ struct DetailView: View {
                         isEditing = true
                     }
                     .padding()
-                    .sheet(isPresented: $isEditing, onDismiss: {
-                        viewModel.fetchCandidateDetails()
-                    }) {
-                        EditingView(candidate: $candidate, viewModel: EditingViewModel(candidate: candidate, token: viewModel.token, candidateId: candidate.id, service: viewModel.service))
+                    .sheet(isPresented: $isEditing) {
+                        EditingView(candidate: $candidate, viewModel: EditingViewModel(candidate: candidate, token: viewModel.token, candidateId: candidate.id, service: viewModel.service), isEditing: $isEditing)
                     }
                 } else {
                     if let errorMessage = viewModel.errorMessage {

@@ -36,6 +36,4 @@ class DetailViewModel: ObservableObject {
             }
         }
     }
-    
-    
 }

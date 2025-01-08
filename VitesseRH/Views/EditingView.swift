@@ -10,7 +10,7 @@ import SwiftUI
 struct EditingView: View {
     @Binding var candidate: Candidate
     @ObservedObject var viewModel: EditingViewModel
-    @Environment(\.dismiss) private var dismiss
+    @Binding var isEditing: Bool
     
     var body: some View {
         VStack {
@@ -46,7 +46,7 @@ struct EditingView: View {
             
             Button("Save Changes") {
                 viewModel.saveChanges(for: candidate)
-                dismiss()
+                isEditing = false
             }
             .padding()
         }
