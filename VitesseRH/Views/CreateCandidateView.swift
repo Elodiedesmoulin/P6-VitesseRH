@@ -45,7 +45,7 @@ struct CreateCandidateView: View {
                     linkedinURL: nil,
                     isFavorite: false
                 )
-                viewModel.addCandidate(newCandidate)
+                viewModel.addCandidate(candidate: newCandidate)
             }) {
                 Text("Save")
                     .font(.headline)
@@ -56,10 +56,13 @@ struct CreateCandidateView: View {
                     .cornerRadius(8)
             }
             .padding()
+            .disabled(viewModel.errorMessage != nil)
+
             
             if let errorMessage = viewModel.errorMessage {
-                Text(errorMessage)
-                    .foregroundColor(.red)
+                            Text(errorMessage)
+                                .foregroundColor(.red)
+                                .padding()
             }
         }
         .padding()

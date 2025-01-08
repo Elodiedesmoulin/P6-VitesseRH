@@ -29,3 +29,13 @@ enum VitesseRHError: LocalizedError {
         }
     }
 }
+
+
+extension Error {
+    func userFriendlyMessage() -> String {
+        if let error = self as? VitesseRHError {
+            return error.localizedDescription
+        }
+        return "An unknown error occurred. Please try again later."
+    }
+}

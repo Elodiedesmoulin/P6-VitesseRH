@@ -38,7 +38,9 @@ struct DetailView: View {
                         isEditing = true
                     }
                     .padding()
-                    .sheet(isPresented: $isEditing) {
+                    .sheet(isPresented: $isEditing, onDismiss: {
+                        self.viewModel.fetchCandidateDetails()
+                    }) {
                         EditingView(candidate: $candidate, viewModel: EditingViewModel(candidate: candidate, token: viewModel.token, candidateId: candidate.id, service: viewModel.service), isEditing: $isEditing)
                     }
                 } else {
@@ -46,7 +48,6 @@ struct DetailView: View {
                         Text(errorMessage)
                             .foregroundColor(.red)
                     }
-                    ProgressView()
                 }
             }
             .navigationTitle("Candidate Details")

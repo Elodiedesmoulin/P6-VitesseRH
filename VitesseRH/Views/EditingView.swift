@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+
 struct EditingView: View {
     @Binding var candidate: Candidate
     @ObservedObject var viewModel: EditingViewModel
@@ -14,6 +15,10 @@ struct EditingView: View {
     
     var body: some View {
         VStack {
+            Text("Edit Candidate")
+                .font(.headline)
+                .bold()
+            
             TextField("First Name", text: $candidate.firstName)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
@@ -44,13 +49,20 @@ struct EditingView: View {
             .textFieldStyle(RoundedBorderTextFieldStyle())
             .padding()
             
+            if let errorMessage = viewModel.errorMessage {
+                Text(errorMessage)
+                    .foregroundColor(.red)
+                    .padding()
+            }
+            
             Button("Save Changes") {
                 viewModel.saveChanges(for: candidate)
-                isEditing = false
+                if viewModel.errorMessage == nil {
+                    isEditing = false
+                }
             }
             .padding()
         }
-        .navigationTitle("Edit Candidate")
         .padding()
     }
 }
