@@ -9,6 +9,7 @@ import SwiftUI
 
 struct CandidateListView: View {
     @StateObject private var viewModel: CandidateListViewModel
+    @State private var searchText: String = ""
     var token: String
     
     init(token: String) {
@@ -18,7 +19,14 @@ struct CandidateListView: View {
     
     var body: some View {
         VStack {
-            List(viewModel.candidates) { candidate in
+            TextField("Search by name or surname", text: $searchText)
+                .padding()
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .onChange(of: searchText) { newValue in
+                    viewModel.filterCandidates(by: newValue)
+                }
+            
+            List(viewModel.filteredCandidates) { candidate in
                 HStack {
                     CandidateRowView(viewModel: viewModel, candidate: candidate, token: token)
                     
@@ -53,10 +61,9 @@ struct CandidateListView: View {
                     .cornerRadius(8)
             }
             .padding()
-            .onAppear {
-                viewModel.fetchCandidates()
-            }
+        }
+        .onAppear {
+            viewModel.fetchCandidates()
         }
     }
-    
 }

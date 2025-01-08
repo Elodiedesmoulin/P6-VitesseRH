@@ -10,6 +10,7 @@ import Combine
 
 class CandidateListViewModel: ObservableObject {
     @Published var candidates = [Candidate]()
+    @Published var filteredCandidates = [Candidate]()
     @Published var errorMessage: String?
     
     private let service: VitesseRHService
@@ -28,6 +29,8 @@ class CandidateListViewModel: ObservableObject {
                 let candidates = try await service.getCandidates(token: token)
                 DispatchQueue.main.async {
                     self.candidates = candidates
+                    self.filteredCandidates = candidates
+
                 }
             } catch {
                 DispatchQueue.main.async {
@@ -50,4 +53,15 @@ class CandidateListViewModel: ObservableObject {
             }
         }
     }
+    
+    func filterCandidates(by searchText: String) {
+            if searchText.isEmpty {
+                filteredCandidates = candidates
+            } else {
+                filteredCandidates = candidates.filter { candidate in
+                    candidate.lastName.lowercased().contains(searchText.lowercased()) ||
+                    candidate.firstName.lowercased().contains(searchText.lowercased())
+                }
+            }
+        }
 }
