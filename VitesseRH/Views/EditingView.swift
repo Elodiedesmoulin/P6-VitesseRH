@@ -12,57 +12,84 @@ struct EditingView: View {
     @Binding var candidate: Candidate
     @ObservedObject var viewModel: EditingViewModel
     @Binding var isEditing: Bool
-    
+
     var body: some View {
         VStack {
             Text("Edit Candidate")
-                .font(.headline)
+                .font(.largeTitle)
                 .bold()
-            
-            TextField("First Name", text: $candidate.firstName)
+                .padding(.bottom, 20)
+
+            VStack(spacing: 15) {
+                TextField("First Name", text: $candidate.firstName)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .padding()
+                    .background(Color.white)
+                    .cornerRadius(10)
+                    .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
+
+                TextField("Last Name", text: $candidate.lastName)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .padding()
+                    .background(Color.white)
+                    .cornerRadius(10)
+                    .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
+
+                TextField("Email", text: $candidate.email)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .padding()
+                    .background(Color.white)
+                    .cornerRadius(10)
+                    .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
+
+                TextField("Phone", text: $candidate.phone)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .padding()
+                    .background(Color.white)
+                    .cornerRadius(10)
+                    .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
+
+                TextField("LinkedIn", text: Binding(
+                    get: { candidate.linkedinURL ?? "" },
+                    set: { candidate.linkedinURL = $0 }
+                ))
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
-            
-            TextField("Last Name", text: $candidate.lastName)
+                .background(Color.white)
+                .cornerRadius(10)
+                .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
+
+                TextField("Note", text: Binding(
+                    get: { candidate.note ?? "" },
+                    set: { candidate.note = $0 }
+                ))
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
-            
-            TextField("Email", text: $candidate.email)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding()
-            
-            TextField("Phone", text: $candidate.phone)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding()
-            
-            TextField("LinkedIn", text: Binding(
-                get: { candidate.linkedinURL ?? "" },
-                set: { candidate.linkedinURL = $0 }
-            ))
-            .textFieldStyle(RoundedBorderTextFieldStyle())
-            .padding()
-            
-            TextField("Note", text: Binding(
-                get: { candidate.note ?? "" },
-                set: { candidate.note = $0 }
-            ))
-            .textFieldStyle(RoundedBorderTextFieldStyle())
-            .padding()
-            
+                .background(Color.white)
+                .cornerRadius(10)
+                .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
+            }
+
             if let errorMessage = viewModel.errorMessage {
                 Text(errorMessage)
                     .foregroundColor(.red)
                     .padding()
             }
-            
+
             Button("Save Changes") {
                 viewModel.saveChanges(for: candidate)
                 if viewModel.errorMessage == nil {
                     isEditing = false
                 }
             }
+            .frame(maxWidth: .infinity)
             .padding()
+            .background(Color.black)
+            .foregroundColor(.white)
+            .cornerRadius(10)
+            .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
         }
         .padding()
+        .background(Color("BackgroundGray"))
     }
 }

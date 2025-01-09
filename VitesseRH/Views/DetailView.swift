@@ -24,20 +24,38 @@ struct DetailView: View {
         NavigationStack {
             VStack {
                 if let candidate = viewModel.candidate {
-                    Text("First Name: \(candidate.firstName)")
-                    Text("Last Name: \(candidate.lastName)")
-                    Text("Email: \(candidate.email)")
-                    Text("Phone: \(candidate.phone)")
-                    if let linkedin = candidate.linkedinURL {
-                        Text("LinkedIn: \(linkedin)")
+                    VStack(alignment: .leading, spacing: 15) {
+                        Text("First Name: \(candidate.firstName)")
+                            .font(.headline)
+                        Text("Last Name: \(candidate.lastName)")
+                            .font(.headline)
+                        Text("Email: \(candidate.email)")
+                            .font(.headline)
+                        Text("Phone: \(candidate.phone)")
+                            .font(.headline)
+                        if let linkedin = candidate.linkedinURL {
+                            Text("LinkedIn: \(linkedin)")
+                                .font(.headline)
+                        }
+                        if let note = candidate.note {
+                            Text("Note: \(note)")
+                                .font(.headline)
+                        }
                     }
-                    if let note = candidate.note {
-                        Text("Note: \(note)")
-                    }
+                    .padding()
+                    .background(Color.white)
+                    .cornerRadius(10)
+                    .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
+                    
                     Button("Edit") {
                         isEditing = true
                     }
                     .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(Color.black)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+                    .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
                     .sheet(isPresented: $isEditing, onDismiss: {
                         self.viewModel.fetchCandidateDetails()
                     }) {
@@ -47,17 +65,13 @@ struct DetailView: View {
                     if let errorMessage = viewModel.errorMessage {
                         Text(errorMessage)
                             .foregroundColor(.red)
+                            .padding()
                     }
                 }
             }
-            .navigationTitle("Candidate Details")
             .padding()
+            .background(Color("BackgroundGray"))
+            .navigationTitle("Candidate Details")
         }
     }
 }
-
-
-
-
-
-

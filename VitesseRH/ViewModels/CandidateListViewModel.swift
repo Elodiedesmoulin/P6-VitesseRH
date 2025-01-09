@@ -11,6 +11,8 @@ import Combine
 class CandidateListViewModel: ObservableObject {
     @Published var candidates = [Candidate]()
     @Published var filteredCandidates = [Candidate]()
+    @Published var isEditMode: Bool = false
+    @Published var selectedCandidates = Set<Candidate>()
     @Published var errorMessage: String?
     
     @Published var searchText: String = ""
@@ -50,6 +52,7 @@ class CandidateListViewModel: ObservableObject {
                 
                 if let index = candidates.firstIndex(where: { $0.id == candidate.id }) {
                     candidates[index].isFavorite.toggle()
+                    fetchCandidates()
                 }
                 
                 filterCandidates(by: searchText, showFavoritesOnly: showFavoritesOnly)
@@ -73,5 +76,33 @@ class CandidateListViewModel: ObservableObject {
     }
     
     
+    func toggleEditMode() {
+            isEditMode.toggle()
+            selectedCandidates.removeAll()
+        }
+
+        func toggleSelection(for candidate: Candidate) {
+            if selectedCandidates.contains(candidate) {
+                selectedCandidates.remove(candidate)
+            } else {
+                selectedCandidates.insert(candidate)
+            }
+        }
+
+    func deleteSelectedCandidates() {
+        Task {
+            do {
+                for candidate in selectedCandidates {
+                    try await service.deleteCandidate(token: token, candidateId: candidate.id)
+                }
+                selectedCandidates.removeAll()
+                fetchCandidates()  
+            } catch {
+                DispatchQueue.main.async {
+                    self.errorMessage = "Failed to delete selected candidates."
+                }
+            }
+        }
+    }
 
 }

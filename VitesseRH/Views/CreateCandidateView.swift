@@ -47,14 +47,18 @@ struct CreateCandidateView: View {
                 )
                 viewModel.addCandidate(candidate: newCandidate)
             }) {
-                Text("Save")
-                    .font(.headline)
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(8)
+                HStack {
+                    Spacer()
+                    Text("Save")
+                        .font(.headline)
+                        .padding()
+                    Spacer()
+                }
             }
+            .background(Color.black)
+            .foregroundColor(.white)
+            .cornerRadius(8)
+            .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
             .padding()
             .disabled(viewModel.errorMessage != nil)
 

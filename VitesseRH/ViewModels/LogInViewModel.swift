@@ -7,7 +7,6 @@
 
 import Foundation
 
-@MainActor
 class LoginViewModel: ObservableObject {
     @Published var email = "admin@vitesse.com"
     @Published var password = "test123"
@@ -38,6 +37,14 @@ class LoginViewModel: ObservableObject {
                 loginMessage = "Erreur de connexion. Veuillez vérifier vos identifiants."
             }
         }
+    }
+    
+    func logout() {
+        isAuthenticated = false
+        token = nil
+        email = ""
+        password = ""
+        loginMessage = nil
     }
     
     private func isEmailValid(_ email: String) -> Bool {

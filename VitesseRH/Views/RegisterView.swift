@@ -36,10 +36,22 @@ struct RegisterView: View {
                 .autocapitalization(.none)
             
             
-            Button("Register") {
+            Button(action: {
                 viewModel.register()
+            }) {
+                HStack {
+                    Spacer()
+                    Text("Register")
+                        .padding()
+                    Spacer()
+                }
             }
-            .padding()
+            .frame(maxWidth: .infinity)
+            .background(Color.black)
+            .foregroundColor(.white)
+            .cornerRadius(10)
+            .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
+            
             
             if let registrationMessage = viewModel.registrationMessage {
                 Text(registrationMessage)

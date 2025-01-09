@@ -18,40 +18,74 @@ struct CandidateListView: View {
     
     var body: some View {
         VStack {
-            HStack {
+            HStack(spacing: 15) {
+                Button(action: {
+                    viewModel.toggleEditMode()
+                }) {
+                    HStack {
+                        Image(systemName: viewModel.isEditMode ? "arrow.uturn.backward.circle.fill" : "pencil.circle.fill")
+                        Text(viewModel.isEditMode ? "Return" : "Edit")
+                    }
+                    .padding()
+                    .background(Color(.black))
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+                    .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
+                }
+                
                 TextField("Search by name or surname", text: $viewModel.searchText)
                     .padding()
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .background(Color.white)
+                    .cornerRadius(10)
+                    .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
                     .onChange(of: viewModel.searchText) { newValue in
                         viewModel.filterCandidates(by: newValue, showFavoritesOnly: viewModel.showFavoritesOnly)
                     }
                 
                 Button(action: {
-                    viewModel.showFavoritesOnly.toggle()
-                    viewModel.filterCandidates(by: viewModel.searchText, showFavoritesOnly: viewModel.showFavoritesOnly)
+                    if viewModel.isEditMode {
+                        viewModel.deleteSelectedCandidates()
+                    } else {
+                        viewModel.showFavoritesOnly.toggle()
+                        viewModel.filterCandidates(by: viewModel.searchText, showFavoritesOnly: viewModel.showFavoritesOnly)
+                    }
                 }) {
-                    Image(systemName: viewModel.showFavoritesOnly ? "star.fill" : "star")
-                        .foregroundColor(viewModel.showFavoritesOnly ? .yellow : .gray)
+                    Image(systemName: viewModel.isEditMode ? "trash.fill" : (viewModel.showFavoritesOnly ? "star.fill" : "star"))
+                        .foregroundColor(viewModel.isEditMode ? .red : (viewModel.showFavoritesOnly ? .yellow : .gray))
                         .padding()
+                        .background(viewModel.isEditMode ? Color.red.opacity(0.2) : Color.white)
+                        .cornerRadius(10)
+                        .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
                 }
             }
             .padding(.horizontal)
+            .padding(.top, 10)
             
             List(viewModel.filteredCandidates) { candidate in
                 HStack {
-                    CandidateRowView(viewModel: viewModel, candidate: candidate, token: token)
+                    if viewModel.isEditMode {
+                        Button(action: {
+                            viewModel.toggleSelection(for: candidate)
+                        }) {
+                            Image(systemName: viewModel.selectedCandidates.contains(candidate) ? "checkmark.circle.fill" : "circle")
+                                .foregroundColor(.blue)
+                        }
+                    }
                     
-                    Button(action: {
-                        viewModel.toggleFavorite(for: candidate)
-                    }) {
-                        HStack {
+                    CandidateRowView(viewModel: viewModel, candidate: candidate, token: token, isEditMode: viewModel.isEditMode)
+                    
+                    if !viewModel.isEditMode {
+                        Button(action: {
+                            viewModel.toggleFavorite(for: candidate)
+                        }) {
                             Image(systemName: candidate.isFavorite ? "star.fill" : "star")
                                 .foregroundColor(candidate.isFavorite ? .yellow : .gray)
+                                .padding()
                         }
-                        .padding()
+                        .buttonStyle(PlainButtonStyle())
                     }
-                    .buttonStyle(PlainButtonStyle())
                 }
+                .padding(.vertical, 5)
             }
             .navigationTitle("Candidates")
             .alert(isPresented: .constant(viewModel.errorMessage != nil)) {
@@ -62,17 +96,21 @@ struct CandidateListView: View {
                 )
             }
             
-            NavigationLink(destination: CreateCandidateView(viewModel: CreateCandidateViewModel(token: token), token: token)) {
-                Text("Create New Candidate")
-                    .font(.headline)
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(8)
+            if !viewModel.isEditMode {
+                NavigationLink(destination: CreateCandidateView(viewModel: CreateCandidateViewModel(token: token), token: token)) {
+                    Text("Create New Candidate")
+                        .font(.headline)
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(Color(.black))
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                        .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
+                }
+                .padding()
             }
-            .padding()
         }
+        .background(Color("BackgroundGray"))
         .onAppear {
             viewModel.fetchCandidates()
         }
