@@ -46,18 +46,20 @@ class CandidateListViewModel: ObservableObject {
     }
     
     func toggleFavorite(for candidate: Candidate) {
+        if let index = candidates.firstIndex(where: { $0.id == candidate.id }) {
+            candidates[index].isFavorite.toggle()
+            filterCandidates(by: searchText, showFavoritesOnly: showFavoritesOnly)
+        }
+        
         Task {
             do {
                 try await service.toggleFavoriteStatus(token: token, candidateId: candidate.id)
-                
-                if let index = candidates.firstIndex(where: { $0.id == candidate.id }) {
-                    candidates[index].isFavorite.toggle()
-                    fetchCandidates()
-                }
-                
-                filterCandidates(by: searchText, showFavoritesOnly: showFavoritesOnly)
             } catch {
                 DispatchQueue.main.async {
+                    if let index = self.candidates.firstIndex(where: { $0.id == candidate.id }) {
+                        self.candidates[index].isFavorite.toggle()
+                        self.filterCandidates(by: self.searchText, showFavoritesOnly: self.showFavoritesOnly)
+                    }
                     self.errorMessage = "Failed to update favorite status."
                 }
             }

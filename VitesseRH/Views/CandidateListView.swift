@@ -68,7 +68,7 @@ struct CandidateListView: View {
                             viewModel.toggleSelection(for: candidate)
                         }) {
                             Image(systemName: viewModel.selectedCandidates.contains(candidate) ? "checkmark.circle.fill" : "circle")
-                                .foregroundColor(.blue)
+                                .foregroundColor(.black)
                         }
                     }
                     
@@ -110,7 +110,6 @@ struct CandidateListView: View {
                 .padding()
             }
         }
-        .background(Color("BackgroundGray"))
         .onAppear {
             viewModel.fetchCandidates()
         }

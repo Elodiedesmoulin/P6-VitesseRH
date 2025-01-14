@@ -16,13 +16,14 @@ struct EditingView: View {
     var body: some View {
         VStack {
             Text("Edit Candidate")
-                .font(.largeTitle)
+                .font(.headline)
                 .bold()
                 .padding(.bottom, 20)
 
             VStack(spacing: 15) {
                 TextField("First Name", text: $candidate.firstName)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .autocorrectionDisabled(true)
                     .padding()
                     .background(Color.white)
                     .cornerRadius(10)
@@ -30,12 +31,15 @@ struct EditingView: View {
 
                 TextField("Last Name", text: $candidate.lastName)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .autocorrectionDisabled(true)
                     .padding()
                     .background(Color.white)
                     .cornerRadius(10)
                     .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
 
                 TextField("Email", text: $candidate.email)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled(true)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .padding()
                     .background(Color.white)
@@ -53,6 +57,8 @@ struct EditingView: View {
                     get: { candidate.linkedinURL ?? "" },
                     set: { candidate.linkedinURL = $0 }
                 ))
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled(true)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
                 .background(Color.white)
@@ -90,6 +96,6 @@ struct EditingView: View {
             .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
         }
         .padding()
-        .background(Color("BackgroundGray"))
+
     }
 }

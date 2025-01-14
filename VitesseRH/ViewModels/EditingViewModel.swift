@@ -26,6 +26,7 @@ class EditingViewModel: ObservableObject {
     
     
     func saveChanges(for candidate: Candidate) {
+        
         guard isValidEmail(candidate.email) else {
             self.errorMessage = "Invalid email format"
             return

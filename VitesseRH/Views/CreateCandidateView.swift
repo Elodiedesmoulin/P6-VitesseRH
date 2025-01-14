@@ -12,6 +12,9 @@ struct CreateCandidateView: View {
     @State private var lastName = ""
     @State private var email = ""
     @State private var phone = ""
+    @State private var linkedin = ""
+    @State private var note = ""
+
     
     @ObservedObject var viewModel: CreateCandidateViewModel
     var token: String
@@ -19,18 +22,32 @@ struct CreateCandidateView: View {
     var body: some View {
         VStack {
             TextField("First Name", text: $firstName)
+                .autocorrectionDisabled(true)
                 .padding()
                 .textFieldStyle(RoundedBorderTextFieldStyle())
             
             TextField("Last Name", text: $lastName)
+                .autocorrectionDisabled(true)
                 .padding()
                 .textFieldStyle(RoundedBorderTextFieldStyle())
             
             TextField("Email", text: $email)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled(true)
                 .padding()
                 .textFieldStyle(RoundedBorderTextFieldStyle())
             
             TextField("Phone", text: $phone)
+                .padding()
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+            
+            TextField("Linkedin", text: $linkedin)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled(true)
+                .padding()
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+            
+            TextField("Note", text: $note)
                 .padding()
                 .textFieldStyle(RoundedBorderTextFieldStyle())
             
@@ -60,7 +77,6 @@ struct CreateCandidateView: View {
             .cornerRadius(8)
             .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
             .padding()
-            .disabled(viewModel.errorMessage != nil)
 
             
             if let errorMessage = viewModel.errorMessage {
