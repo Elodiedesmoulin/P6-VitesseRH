@@ -81,6 +81,7 @@ class VitesseRHService {
     
     
     
+    
     // Candidates
     func getCandidates(token: String) async throws -> [Candidate] {
         let request = try createRequest(endpoint: "/candidate", method: "GET", token: token)

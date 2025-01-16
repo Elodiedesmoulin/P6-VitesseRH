@@ -9,55 +9,48 @@ import SwiftUI
 
 struct DetailView: View {
     @StateObject private var viewModel: DetailViewModel
-    @State private var isEditing = false
-    
     @Binding var candidate: Candidate
+    @State private var isEditing = false
     var token: String
-    
+
     init(candidate: Binding<Candidate>, token: String) {
         _candidate = candidate
-        _viewModel = StateObject(wrappedValue: DetailViewModel(service: VitesseRHService(), token: token, candidateId: candidate.id))
+        _viewModel = StateObject(wrappedValue: DetailViewModel(service: VitesseRHService(), token: token, candidateId: candidate.wrappedValue.id))
         self.token = token
     }
-    
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 20) {
-//                if let candidate = viewModel.candidate {
-                    VStack(spacing: 15) {
-                        CandidateDetailHeader(candidate: candidate)
-                        CandidateDetailInfo(candidate: candidate)
-                        NoteView(candidate: candidate)
-                        
-                        Button(action: {
-                            isEditing = true
-                        }) {
-                            Text("Edit")
-                                .font(.headline)
-                                .padding()
-                                .frame(maxWidth: .infinity)
-                                .background(Color.black)
-                                .foregroundColor(.white)
-                                .cornerRadius(10)
-                                .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
-                        }
-                        .sheet(isPresented: $isEditing, onDismiss: {
-                            self.viewModel.fetchCandidateDetails()
-                        }) {
-                            EditingView(candidate: $candidate, viewModel: EditingViewModel(candidate: candidate, token: viewModel.token, candidateId: candidate.id, service: viewModel.service), isEditing: $isEditing)
-                        }
+                VStack(spacing: 15) {
+                    CandidateDetailHeader(candidate: $candidate) {
+                        viewModel.toggleFavorite()
                     }
-                    .padding()
-                    .background(Color.white)
-                    .cornerRadius(12)
-                    .shadow(color: Color.gray.opacity(0.1), radius: 10, x: 0, y: 5)
-//                } else {
-//                    if let errorMessage = viewModel.errorMessage {
-//                        Text(errorMessage)
-//                            .foregroundColor(.red)
-//                            .padding()
-//                    }
-//                }
+                    CandidateDetailInfo(candidate: candidate)
+                    NoteView(candidate: candidate)
+
+                    Button(action: {
+                        isEditing = true
+                    }) {
+                        Text("Edit")
+                            .font(.headline)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(Color.black)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                            .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
+                    }
+                    .sheet(isPresented: $isEditing, onDismiss: {
+                        viewModel.fetchCandidateDetails()
+                    }) {
+                        EditingView(candidate: $candidate, viewModel: EditingViewModel(candidate: candidate, token: viewModel.token, candidateId: candidate.id, service: viewModel.service), isEditing: $isEditing)
+                    }
+                }
+                .padding()
+                .background(Color.white)
+                .cornerRadius(12)
+                .shadow(color: Color.gray.opacity(0.1), radius: 10, x: 0, y: 5)
             }
             .padding()
             .background(Color("BackgroundGray"))
@@ -68,8 +61,9 @@ struct DetailView: View {
 }
 
 struct CandidateDetailHeader: View {
-    let candidate: Candidate
-    
+    @Binding var candidate: Candidate
+    let toggleFavorite: () -> Void
+
     var body: some View {
         HStack {
             Text("\(candidate.firstName) \(candidate.lastName)")
@@ -79,9 +73,12 @@ struct CandidateDetailHeader: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
             Spacer()
-            if candidate.isFavorite {
-                Image(systemName: "star.fill")
-                    .foregroundColor(.yellow)
+            Button(action: {
+                candidate.isFavorite.toggle()
+                toggleFavorite()
+            }) {
+                Image(systemName: candidate.isFavorite ? "star.fill" : "star")
+                    .foregroundColor(candidate.isFavorite ? .yellow : .gray)
             }
         }
         .padding(.bottom, 15)

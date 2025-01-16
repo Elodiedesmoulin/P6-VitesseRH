@@ -31,6 +31,11 @@ class CreateCandidateViewModel: ObservableObject {
             self.errorMessage = "Invalid phone number format"
             return
         }
+        
+        guard isNameValid(candidate.firstName, candidate.lastName) else {
+            self.errorMessage = "Le prénom et le nom doovent contenir au moins 3 caractères."
+            return
+        }
     
                     Task {
                 do {
@@ -62,5 +67,10 @@ class CreateCandidateViewModel: ObservableObject {
         let phoneRegex = "^((\\+33|0)[1-9])((\\s|\\-)?[0-9]{2}){4}$"
         let phonePredicate = NSPredicate(format: "SELF MATCHES %@", phoneRegex)
         return phonePredicate.evaluate(with: phoneNumber)
+    }
+    
+    private func isNameValid(_ firstName: String, _ lastName: String) -> Bool {
+        return firstName.count >= 3 && lastName.count >= 3
+
     }
 }

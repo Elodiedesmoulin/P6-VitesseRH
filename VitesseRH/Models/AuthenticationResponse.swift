@@ -9,5 +9,4 @@ import Foundation
 
 struct AuthenticationResponse: Decodable {
     let token: String
-    let isAdmin: Bool
 }

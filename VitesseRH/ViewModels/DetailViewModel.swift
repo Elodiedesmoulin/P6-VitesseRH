@@ -10,6 +10,7 @@ import Foundation
 class DetailViewModel: ObservableObject {
     @Published var candidate: Candidate?
     @Published var errorMessage: String?
+    @Published var candidates = [Candidate]()
     
     var service: VitesseRHService
     var token: String
@@ -32,6 +33,22 @@ class DetailViewModel: ObservableObject {
             } catch {
                 DispatchQueue.main.async {
                     self.errorMessage = "Failed to load candidate details."
+                }
+            }
+        }
+    }
+    
+    func toggleFavorite() {
+        guard let candidate = candidate else { return }
+        Task {
+            do {
+                try await service.toggleFavoriteStatus(token: token, candidateId: candidate.id)
+                DispatchQueue.main.async {
+                    self.candidate?.isFavorite.toggle()
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    self.errorMessage = "Failed to update favorite status."
                 }
             }
         }
