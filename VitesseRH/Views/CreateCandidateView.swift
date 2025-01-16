@@ -86,5 +86,9 @@ struct CreateCandidateView: View {
             }
         }
         .padding()
+        .contentShape(Rectangle())
+        .onTapGesture {
+            UIApplication.shared.endEditing()
+        }
     }
 }

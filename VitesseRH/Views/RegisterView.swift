@@ -35,7 +35,6 @@ struct RegisterView: View {
                 .padding()
                 .autocapitalization(.none)
             
-            
             Button(action: {
                 viewModel.register()
             }) {
@@ -52,7 +51,6 @@ struct RegisterView: View {
             .cornerRadius(10)
             .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
             
-            
             if let registrationMessage = viewModel.registrationMessage {
                 Text(registrationMessage)
                     .foregroundColor(viewModel.isRegistered ? .green : .red)
@@ -61,5 +59,8 @@ struct RegisterView: View {
         }
         .padding()
         .navigationTitle("Register")
+        .onTapGesture {
+            UIApplication.shared.endEditing()
+        }
     }
 }

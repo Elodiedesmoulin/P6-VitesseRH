@@ -12,9 +12,3 @@ protocol SessionProtocol {
 }
 
 extension URLSession: SessionProtocol {}
-
-//extension SessionProtocol {
-//    func data(for request: URLRequest) async throws -> (Data, URLResponse){
-//        return try await data(for: request, delegate: nil)
-//    }
-//}

@@ -8,8 +8,8 @@
 import Foundation
 
 class LoginViewModel: ObservableObject {
-    @Published var email = "admin@vitesse.com"
-    @Published var password = "test123"
+    @Published var email = "elodie.dsmln@icloud.com"
+    @Published var password = "Feu2stjean."
     @Published var token: String?
     @Published var isAuthenticated = false
     @Published var loginMessage: String?
@@ -18,23 +18,35 @@ class LoginViewModel: ObservableObject {
     
     func login() {
         guard isEmailValid(email) else {
-            loginMessage = "Veuillez entrer une adresse e-mail valide."
+            loginMessage = VitesseRHError.invalidParameters.localizedDescription
             return
         }
         
         guard isPasswordValid(password) else {
-            loginMessage = "Le mot de passe doit contenir au moins 6 caractères."
+            loginMessage = VitesseRHError.invalidParameters.localizedDescription
             return
         }
         
         Task {
             do {
-                token = try await service.login(email: email, password: password)
+                let (receivedToken, isAdmin) = try await service.login(email: email, password: password)
+                token = receivedToken
                 isAuthenticated = true
                 loginMessage = nil
+            } catch let error as VitesseRHError {
+                isAuthenticated = false
+                loginMessage = error.localizedDescription
+            } catch let error as URLError {
+                if error.code == .notConnectedToInternet {
+                    loginMessage = VitesseRHError.networkError.localizedDescription
+                } else if error.code == .timedOut {
+                    loginMessage = VitesseRHError.timeout.localizedDescription
+                } else {
+                    loginMessage = VitesseRHError.unknown.localizedDescription
+                }
             } catch {
                 isAuthenticated = false
-                loginMessage = "Erreur de connexion. Veuillez vérifier vos identifiants."
+                loginMessage = VitesseRHError.unknown.localizedDescription
             }
         }
     }
@@ -56,3 +68,5 @@ class LoginViewModel: ObservableObject {
         return password.count >= 6
     }
 }
+
+

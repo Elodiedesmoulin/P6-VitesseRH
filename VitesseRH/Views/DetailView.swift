@@ -12,23 +12,27 @@ struct DetailView: View {
     @Binding var candidate: Candidate
     @State private var isEditing = false
     var token: String
+    var isAdmin: Bool
 
-    init(candidate: Binding<Candidate>, token: String) {
+    init(candidate: Binding<Candidate>, token: String, isAdmin: Bool) {
         _candidate = candidate
-        _viewModel = StateObject(wrappedValue: DetailViewModel(service: VitesseRHService(), token: token, candidateId: candidate.wrappedValue.id))
+        _viewModel = StateObject(wrappedValue: DetailViewModel(service: VitesseRHService(), token: token, candidateId: candidate.wrappedValue.id, isAdmin: isAdmin))
         self.token = token
+        self.isAdmin = isAdmin
     }
-
+    
     var body: some View {
         NavigationStack {
             VStack(spacing: 20) {
                 VStack(spacing: 15) {
-                    CandidateDetailHeader(candidate: $candidate) {
+
+                    CandidateDetailHeader(candidate: $candidate, toggleFavorite: {
                         viewModel.toggleFavorite()
-                    }
+                    }, isAdmin: isAdmin)
+                    
                     CandidateDetailInfo(candidate: candidate)
                     NoteView(candidate: candidate)
-
+                    
                     Button(action: {
                         isEditing = true
                     }) {
@@ -56,6 +60,13 @@ struct DetailView: View {
             .background(Color("BackgroundGray"))
             .navigationTitle("Candidate Details")
             .navigationBarTitleDisplayMode(.inline)
+            .alert(isPresented: .constant(viewModel.errorMessage != nil)) {
+                Alert(
+                    title: Text("Error"),
+                    message: Text(viewModel.errorMessage ?? "An unknown error occurred."),
+                    dismissButton: .default(Text("OK"))
+                )
+            }
         }
     }
 }
@@ -63,6 +74,7 @@ struct DetailView: View {
 struct CandidateDetailHeader: View {
     @Binding var candidate: Candidate
     let toggleFavorite: () -> Void
+    var isAdmin: Bool  
 
     var body: some View {
         HStack {
@@ -73,12 +85,19 @@ struct CandidateDetailHeader: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
             Spacer()
-            Button(action: {
-                candidate.isFavorite.toggle()
-                toggleFavorite()
-            }) {
+
+            if isAdmin {
+                Button(action: {
+                    candidate.isFavorite.toggle()
+                    toggleFavorite()
+                }) {
+                    Image(systemName: candidate.isFavorite ? "star.fill" : "star")
+                        .foregroundColor(candidate.isFavorite ? .yellow : .gray)
+                }
+            } else {
                 Image(systemName: candidate.isFavorite ? "star.fill" : "star")
                     .foregroundColor(candidate.isFavorite ? .yellow : .gray)
+                    .opacity(0.5)
             }
         }
         .padding(.bottom, 15)
@@ -126,7 +145,7 @@ struct CandidateInfoRow: View {
 
 struct NoteView: View {
     let candidate: Candidate
-
+    
     var body: some View {
         VStack(alignment: .leading) {
             HStack {
@@ -155,5 +174,5 @@ struct NoteView: View {
 }
 
 #Preview(body: {
-    DetailView(candidate: .constant(Candidate(id: "dfghj", firstName: "Elo", lastName: "Desm", email: "elo.desl@icloud.com", phone: "0660123626", isFavorite: true)) , token: "fghjkl")
+    DetailView(candidate: .constant(Candidate(id: "dfghj", firstName: "Elo", lastName: "Desm", email: "elo.desl@icloud.com", phone: "0660123626", isFavorite: true)) , token: "fghjkl", isAdmin: true)
 })

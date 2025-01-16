@@ -10,12 +10,12 @@ import SwiftUI
 struct CandidateListView: View {
     @StateObject private var viewModel: CandidateListViewModel
     let token: String
-
+    
     init(token: String) {
         self.token = token
         _viewModel = StateObject(wrappedValue: CandidateListViewModel(token: token))
     }
-
+    
     var body: some View {
         VStack {
             HStack(spacing: 15) {
@@ -32,7 +32,7 @@ struct CandidateListView: View {
                     .cornerRadius(10)
                     .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
                 }
-
+                
                 TextField("Search by name or surname", text: $viewModel.searchText)
                     .padding()
                     .background(Color.white)
@@ -41,7 +41,7 @@ struct CandidateListView: View {
                     .onChange(of: viewModel.searchText) { newValue in
                         viewModel.filterCandidates(by: newValue, showFavoritesOnly: viewModel.showFavoritesOnly)
                     }
-
+                
                 Button(action: {
                     viewModel.showFavoritesOnly.toggle()
                     viewModel.filterCandidates(by: viewModel.searchText, showFavoritesOnly: viewModel.showFavoritesOnly)
@@ -56,7 +56,7 @@ struct CandidateListView: View {
             }
             .padding(.horizontal)
             .padding(.top, 10)
-
+            
             List(viewModel.filteredCandidates) { candidate in
                 HStack {
                     if viewModel.isEditMode {
@@ -67,11 +67,11 @@ struct CandidateListView: View {
                                 .foregroundColor(.black)
                         }
                     }
-
+                    
                     CandidateRowView(viewModel: viewModel, candidate: candidate, token: token, isEditMode: viewModel.isEditMode)
-
+                    
                     Spacer()
-
+                    
                     Image(systemName: candidate.isFavorite ? "star.fill" : "star")
                         .foregroundColor(candidate.isFavorite ? .yellow : .gray)
                 }
@@ -85,7 +85,7 @@ struct CandidateListView: View {
                     dismissButton: .default(Text("OK"))
                 )
             }
-
+            
             if !viewModel.isEditMode {
                 NavigationLink(destination: CreateCandidateView(viewModel: CreateCandidateViewModel(token: token), token: token)) {
                     Text("Create New Candidate")

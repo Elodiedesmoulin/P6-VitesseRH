@@ -35,9 +35,13 @@ class CandidateListViewModel: ObservableObject {
                     self.candidates = candidates
                     self.filteredCandidates = candidates
                 }
+            } catch let error as VitesseRHError {
+                DispatchQueue.main.async {
+                    self.errorMessage = error.localizedDescription
+                }
             } catch {
                 DispatchQueue.main.async {
-                    self.errorMessage = "Failed to load candidates."
+                    self.errorMessage = VitesseRHError.unknown.localizedDescription
                 }
             }
         }
@@ -72,9 +76,13 @@ class CandidateListViewModel: ObservableObject {
                 }
                 selectedCandidates.removeAll()
                 fetchCandidates()
+            } catch let error as VitesseRHError {
+                DispatchQueue.main.async {
+                    self.errorMessage = error.localizedDescription
+                }
             } catch {
                 DispatchQueue.main.async {
-                    self.errorMessage = "Failed to delete selected candidates."
+                    self.errorMessage = VitesseRHError.unknown.localizedDescription
                 }
             }
         }

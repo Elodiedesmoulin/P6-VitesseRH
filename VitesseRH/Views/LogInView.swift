@@ -9,13 +9,11 @@ import SwiftUI
 
 struct LoginView: View {
     @StateObject private var viewModel = LoginViewModel()
-    
-    
+
     var body: some View {
         NavigationView {
             GeometryReader { geometry in
                 VStack {
-                    
                     LogoView()
                     
                     Text("Login")
@@ -92,9 +90,19 @@ struct LoginView: View {
                     LinearGradient(gradient: Gradient(colors: [Color.blue.opacity(0.2), Color.gray]), startPoint: .bottom, endPoint: .top)
                         .ignoresSafeArea()
                 )
+                .onTapGesture {
+                    UIApplication.shared.endEditing()
+                }
             }
         }
         .navigationViewStyle(StackNavigationViewStyle())
         .animation(.easeInOut, value: viewModel.isAuthenticated)
+    }
+}
+
+extension UIApplication {
+    func endEditing() {
+        guard let windowScene = connectedScenes.first as? UIWindowScene else { return }
+        windowScene.windows.first?.endEditing(true)
     }
 }

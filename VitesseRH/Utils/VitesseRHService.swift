@@ -57,12 +57,12 @@ class VitesseRHService {
     
     
     // Authentication
-    func login(email: String, password: String) async throws -> String {
+    func login(email: String, password: String) async throws -> (String, Bool) {
         let parameters = ["email": email, "password": password]
         let request = try createRequest(endpoint: "/user/auth", method: "POST", parameters: parameters)
         let (data, response) = try await session.data(for: request)
         let authenticationResponse: AuthenticationResponse = try handleResponse(data, response, decodingType: AuthenticationResponse.self)
-        return authenticationResponse.token
+        return (authenticationResponse.token, authenticationResponse.isAdmin)
     }
     
     func register(firstName: String, lastName: String, email: String, password: String) async throws {

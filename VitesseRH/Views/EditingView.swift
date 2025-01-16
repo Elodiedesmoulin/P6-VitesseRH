@@ -7,81 +7,43 @@
 
 import SwiftUI
 
-
 struct EditingView: View {
     @Binding var candidate: Candidate
     @ObservedObject var viewModel: EditingViewModel
     @Binding var isEditing: Bool
-
+    
     var body: some View {
-        VStack {
+        VStack(spacing: 20) {
             Text("Edit Candidate")
-                .font(.headline)
+                .font(.largeTitle)
                 .bold()
                 .padding(.bottom, 20)
-
+            
             VStack(spacing: 15) {
-                TextField("First Name", text: $candidate.firstName)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .autocorrectionDisabled(true)
-                    .padding()
-                    .background(Color.white)
-                    .cornerRadius(10)
-                    .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
-
-                TextField("Last Name", text: $candidate.lastName)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .autocorrectionDisabled(true)
-                    .padding()
-                    .background(Color.white)
-                    .cornerRadius(10)
-                    .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
-
-                TextField("Email", text: $candidate.email)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled(true)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding()
-                    .background(Color.white)
-                    .cornerRadius(10)
-                    .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
-
-                TextField("Phone", text: $candidate.phone)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding()
-                    .background(Color.white)
-                    .cornerRadius(10)
-                    .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
-
-                TextField("LinkedIn", text: Binding(
+                EditableRow(label: "First Name", text: $candidate.firstName)
+                EditableRow(label: "Last Name", text: $candidate.lastName)
+                EditableRow(label: "Email", text: $candidate.email)
+                EditableRow(label: "Phone", text: $candidate.phone)
+                EditableRow(label: "LinkedIn", text: Binding(
                     get: { candidate.linkedinURL ?? "" },
                     set: { candidate.linkedinURL = $0 }
                 ))
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled(true)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding()
-                .background(Color.white)
-                .cornerRadius(10)
-                .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
-
-                TextField("Note", text: Binding(
+                EditableRow(label: "Note", text: Binding(
                     get: { candidate.note ?? "" },
                     set: { candidate.note = $0 }
                 ))
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding()
-                .background(Color.white)
-                .cornerRadius(10)
-                .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
             }
-
+            .padding()
+            .background(Color.white)
+            .cornerRadius(12)
+            .shadow(color: Color.gray.opacity(0.1), radius: 10, x: 0, y: 5)
+            
             if let errorMessage = viewModel.errorMessage {
                 Text(errorMessage)
                     .foregroundColor(.red)
                     .padding()
             }
-
+            
             Button("Save Changes") {
                 viewModel.saveChanges(for: candidate)
                 if viewModel.errorMessage == nil {
@@ -96,6 +58,31 @@ struct EditingView: View {
             .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
         }
         .padding()
+        .onTapGesture {
+            UIApplication.shared.endEditing()
+        }
+    }
+}
 
+struct EditableRow: View {
+    let label: String
+    @Binding var text: String
+    
+    var body: some View {
+        VStack(alignment: .leading) {
+            Text(label)
+                .font(.subheadline)
+                .foregroundColor(.gray)
+                .padding(.bottom, 5)
+            
+            TextField("", text: $text)
+                .padding(8)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.gray, lineWidth: 1)
+                        .background(Color.white)
+                )
+                .frame(height: 40)
+        }
     }
 }

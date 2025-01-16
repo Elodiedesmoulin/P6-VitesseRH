@@ -11,7 +11,6 @@ class CreateCandidateViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var creatingMessage: String?
     
-    
     private let service: VitesseRHService
     private var token: String
     
@@ -21,41 +20,39 @@ class CreateCandidateViewModel: ObservableObject {
     }
     
     func addCandidate(candidate: Candidate) {
-        
         guard isValidEmail(candidate.email) else {
-            self.errorMessage = "Invalid email format"
+            self.errorMessage = VitesseRHError.invalidEmail.userFriendlyMessage()
             return
         }
         
         guard isValidFrenchPhoneNumber(candidate.phone) else {
-            self.errorMessage = "Invalid phone number format"
+            self.errorMessage = VitesseRHError.invalidPhone.userFriendlyMessage()
             return
         }
         
         guard isNameValid(candidate.firstName, candidate.lastName) else {
-            self.errorMessage = "Le prénom et le nom doovent contenir au moins 3 caractères."
+            self.errorMessage = VitesseRHError.invalidName.userFriendlyMessage()
             return
         }
-    
-                    Task {
-                do {
-                    try await service.createCandidate(token: token, candidate: candidate)
-                    DispatchQueue.main.async {
-                        self.errorMessage = nil
-                    }
-                } catch let error as VitesseRHError {
-                    DispatchQueue.main.async {
-                        self.errorMessage = error.userFriendlyMessage()
-                    }
-                } catch {
-                    DispatchQueue.main.async {
-                        self.errorMessage = "A network error occured, please try again."
-                    }
+
+        Task {
+            do {
+                try await service.createCandidate(token: token, candidate: candidate)
+                DispatchQueue.main.async {
+                    self.errorMessage = nil
+                    self.creatingMessage = "Candidate created successfully."
+                }
+            } catch let error as VitesseRHError {
+                DispatchQueue.main.async {
+                    self.errorMessage = error.userFriendlyMessage()
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    self.errorMessage = VitesseRHError.networkError.userFriendlyMessage()
                 }
             }
         }
-        
-    
+    }
     
     func isValidEmail(_ email: String) -> Bool {
         let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
@@ -71,6 +68,5 @@ class CreateCandidateViewModel: ObservableObject {
     
     private func isNameValid(_ firstName: String, _ lastName: String) -> Bool {
         return firstName.count >= 3 && lastName.count >= 3
-
     }
 }

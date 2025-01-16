@@ -15,11 +15,13 @@ class DetailViewModel: ObservableObject {
     var service: VitesseRHService
     var token: String
     var candidateId: String
+    var isAdmin: Bool
     
-    init(service: VitesseRHService = VitesseRHService(), token: String, candidateId: String) {
+    init(service: VitesseRHService = VitesseRHService(), token: String, candidateId: String, isAdmin: Bool) {
         self.service = service
         self.token = token
         self.candidateId = candidateId
+        self.isAdmin = isAdmin
         fetchCandidateDetails()
     }
     
@@ -30,25 +32,38 @@ class DetailViewModel: ObservableObject {
                 DispatchQueue.main.async {
                     self.candidate = candidateDetails
                 }
+            } catch let error as VitesseRHError {
+                DispatchQueue.main.async {
+                    self.errorMessage = error.localizedDescription
+                }
             } catch {
                 DispatchQueue.main.async {
-                    self.errorMessage = "Failed to load candidate details."
+                    self.errorMessage = VitesseRHError.unknown.localizedDescription
                 }
             }
         }
     }
     
     func toggleFavorite() {
-        guard let candidate = candidate else { return }
+        guard let candidate = candidate, isAdmin else {
+            DispatchQueue.main.async {
+                self.errorMessage = VitesseRHError.permissionDenied.localizedDescription
+            }
+            return
+        }
         Task {
             do {
                 try await service.toggleFavoriteStatus(token: token, candidateId: candidate.id)
                 DispatchQueue.main.async {
                     self.candidate?.isFavorite.toggle()
                 }
+            } catch let error as VitesseRHError {
+                DispatchQueue.main.async {
+                    self.errorMessage = error.localizedDescription
+                }
             } catch {
                 DispatchQueue.main.async {
-                    self.errorMessage = "Failed to update favorite status."
+                    self.errorMessage = VitesseRHError.unknown.localizedDescription
                 }
             }
         }
