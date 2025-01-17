@@ -7,10 +7,10 @@
 
 import Foundation
 
+@MainActor
 class DetailViewModel: ObservableObject {
     @Published var candidate: Candidate?
     @Published var errorMessage: String?
-    @Published var candidates = [Candidate]()
     
     var service: VitesseRHService
     var token: String

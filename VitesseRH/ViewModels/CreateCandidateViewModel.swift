@@ -7,6 +7,7 @@
 
 import Foundation
 
+@MainActor
 class CreateCandidateViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var creatingMessage: String?
@@ -19,37 +20,43 @@ class CreateCandidateViewModel: ObservableObject {
         self.token = token
     }
     
+    
+    
+    private func handleSuccess() {
+        self.errorMessage = nil
+        self.creatingMessage = "Candidate created successfully."
+    }
+    
+    private func handleError(error: VitesseRHError) {
+        self.errorMessage = error.localizedDescription
+    }
+    
+    
+    
     func addCandidate(candidate: Candidate) {
         guard isValidEmail(candidate.email) else {
-            self.errorMessage = VitesseRHError.invalidEmail.userFriendlyMessage()
+            self.errorMessage = VitesseRHError.invalidEmail.localizedDescription
             return
         }
         
         guard isValidFrenchPhoneNumber(candidate.phone) else {
-            self.errorMessage = VitesseRHError.invalidPhone.userFriendlyMessage()
+            self.errorMessage = VitesseRHError.invalidPhone.localizedDescription
             return
         }
         
         guard isNameValid(candidate.firstName, candidate.lastName) else {
-            self.errorMessage = VitesseRHError.invalidName.userFriendlyMessage()
+            self.errorMessage = VitesseRHError.invalidName.localizedDescription
             return
         }
 
         Task {
             do {
                 try await service.createCandidate(token: token, candidate: candidate)
-                DispatchQueue.main.async {
-                    self.errorMessage = nil
-                    self.creatingMessage = "Candidate created successfully."
-                }
+                self.handleSuccess()
             } catch let error as VitesseRHError {
-                DispatchQueue.main.async {
-                    self.errorMessage = error.userFriendlyMessage()
-                }
+                self.handleError(error: error)
             } catch {
-                DispatchQueue.main.async {
-                    self.errorMessage = VitesseRHError.networkError.userFriendlyMessage()
-                }
+                self.handleError(error: VitesseRHError.networkError)
             }
         }
     }

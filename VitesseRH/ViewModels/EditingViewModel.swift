@@ -7,38 +7,39 @@
 
 import Foundation
 
+@MainActor
 class EditingViewModel: ObservableObject {
     @Published var candidate: Candidate
     var token: String
     var candidateId: String
     var service: VitesseRHService
     @Published var errorMessage: String? = nil
-
+    
     init(candidate: Candidate, token: String, candidateId: String, service: VitesseRHService) {
         self.candidate = candidate
         self.token = token
         self.candidateId = candidateId
         self.service = service
     }
-
+    
     func saveChanges(for candidate: Candidate) {
         guard isValidEmail(candidate.email) else {
-            self.errorMessage = VitesseRHError.invalidEmail.userFriendlyMessage()
+            self.errorMessage = VitesseRHError.invalidEmail.localizedDescription
             return
         }
         
         guard isValidFrenchPhoneNumber(candidate.phone) else {
-            self.errorMessage = VitesseRHError.invalidPhone.userFriendlyMessage()
+            self.errorMessage = VitesseRHError.invalidPhone.localizedDescription
             return
         }
-
+        
         if let linkedinURL = candidate.linkedinURL, !linkedinURL.isEmpty {
             guard isValidURL(linkedinURL) else {
-                self.errorMessage = VitesseRHError.invalidLinkedInURL.userFriendlyMessage()
+                self.errorMessage = VitesseRHError.invalidLinkedInURL.localizedDescription
                 return
             }
         }
-
+        
         Task {
             do {
                 try await service.updateCandidate(token: token, candidateId: candidate.id, candidate: candidate)
@@ -47,16 +48,16 @@ class EditingViewModel: ObservableObject {
                 }
             } catch let error as VitesseRHError {
                 DispatchQueue.main.async {
-                    self.errorMessage = error.userFriendlyMessage()
+                    self.errorMessage = error.localizedDescription
                 }
             } catch {
                 DispatchQueue.main.async {
-                    self.errorMessage = VitesseRHError.networkError.userFriendlyMessage()
+                    self.errorMessage = VitesseRHError.networkError.localizedDescription
                 }
             }
         }
     }
-
+    
     func isValidEmail(_ email: String) -> Bool {
         let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
         let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)

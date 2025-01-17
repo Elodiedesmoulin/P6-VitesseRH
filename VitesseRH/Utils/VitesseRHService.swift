@@ -8,12 +8,15 @@
 import Foundation
 
 class VitesseRHService {
+    
     let baseUrl = "http://127.0.0.1:8080"
     let session: SessionProtocol
     
     init(session: SessionProtocol = URLSession.shared) {
         self.session = session
     }
+    
+    
     
     private func createRequest(
         endpoint: String,

@@ -7,6 +7,7 @@
 
 import Foundation
 
+@MainActor
 class RegisterViewModel: ObservableObject {
     
     @Published var firstName: String = ""
@@ -26,22 +27,22 @@ class RegisterViewModel: ObservableObject {
     
     func register() {
         guard !firstName.isEmpty, !lastName.isEmpty else {
-            self.registrationMessage = VitesseRHError.invalidName.userFriendlyMessage()
+            self.registrationMessage = VitesseRHError.invalidName.localizedDescription
             return
         }
         
         guard isEmailValid(email) else {
-            self.registrationMessage = VitesseRHError.invalidEmail.userFriendlyMessage()
+            self.registrationMessage = VitesseRHError.invalidEmail.localizedDescription
             return
         }
         
         guard isPasswordValid(password) else {
-            self.registrationMessage = VitesseRHError.invalidPassword.userFriendlyMessage()
+            self.registrationMessage = VitesseRHError.invalidPassword.localizedDescription
             return
         }
         
         guard password == confirmPassword else {
-            self.registrationMessage = VitesseRHError.passwordMismatch.userFriendlyMessage()
+            self.registrationMessage = VitesseRHError.passwordMismatch.localizedDescription
             return
         }
         
@@ -54,19 +55,19 @@ class RegisterViewModel: ObservableObject {
                 }
             } catch let error as VitesseRHError {
                 DispatchQueue.main.async {
-                    self.registrationMessage = error.userFriendlyMessage()
+                    self.registrationMessage = error.localizedDescription
                 }
             } catch let error as URLError {
                 if error.code == .notConnectedToInternet {
-                    self.registrationMessage = VitesseRHError.networkError.userFriendlyMessage()
+                    self.registrationMessage = VitesseRHError.networkError.localizedDescription
                 } else if error.code == .timedOut {
-                    self.registrationMessage = VitesseRHError.timeout.userFriendlyMessage()
+                    self.registrationMessage = VitesseRHError.timeout.localizedDescription
                 } else {
-                    self.registrationMessage = VitesseRHError.unknown.userFriendlyMessage()
+                    self.registrationMessage = VitesseRHError.unknown.localizedDescription
                 }
             } catch {
                 DispatchQueue.main.async {
-                    self.registrationMessage = VitesseRHError.unknown.userFriendlyMessage()
+                    self.registrationMessage = VitesseRHError.unknown.localizedDescription
                 }
             }
         }

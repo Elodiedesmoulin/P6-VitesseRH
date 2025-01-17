@@ -100,9 +100,3 @@ struct LoginView: View {
     }
 }
 
-extension UIApplication {
-    func endEditing() {
-        guard let windowScene = connectedScenes.first as? UIWindowScene else { return }
-        windowScene.windows.first?.endEditing(true)
-    }
-}

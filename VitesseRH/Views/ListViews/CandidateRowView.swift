@@ -12,7 +12,6 @@ struct CandidateRowView: View {
     var candidate: Candidate
     var token: String
     var isEditMode: Bool
-    @State private var isNavigationActive = false
     
     var body: some View {
         HStack {
@@ -20,19 +19,13 @@ struct CandidateRowView: View {
                 Text(candidate.firstName + " " + candidate.lastName)
                     .font(.headline)
             } else {
-                Button(action: {
-                    isNavigationActive = true
-                }) {
+                NavigationLink(
+                    destination: CandidateDetailView(candidate: $viewModel.candidates.first(where: { $0.id == candidate.id })!, token: token, isAdmin: true)
+                ) {
                     Text(candidate.firstName + " " + candidate.lastName)
                         .font(.headline)
                         .foregroundColor(.primary)
                 }
-                .background(
-                    NavigationLink(
-                        destination: DetailView(candidate: $viewModel.candidates.first(where: { $0.id == candidate.id })!, token: token, isAdmin: true),
-                        isActive: $isNavigationActive
-                    ) { EmptyView() }
-                )
                 .buttonStyle(PlainButtonStyle())
             }
             Spacer()

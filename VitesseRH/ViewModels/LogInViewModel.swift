@@ -7,6 +7,7 @@
 
 import Foundation
 
+@MainActor
 class LoginViewModel: ObservableObject {
     @Published var email = "elodie.dsmln@icloud.com"
     @Published var password = "Feu2stjean."
@@ -29,7 +30,7 @@ class LoginViewModel: ObservableObject {
         
         Task {
             do {
-                let (receivedToken, isAdmin) = try await service.login(email: email, password: password)
+                let (receivedToken, _) = try await service.login(email: email, password: password)
                 token = receivedToken
                 isAuthenticated = true
                 loginMessage = nil
