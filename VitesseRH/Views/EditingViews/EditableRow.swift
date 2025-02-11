@@ -16,20 +16,10 @@ struct EditableRow: View {
             Text(label)
                 .font(.subheadline)
                 .foregroundColor(.gray)
-                .padding(.bottom, 5)
-            
-            TextField("", text: $text)
+            TextField(label, text: $text)
                 .padding(8)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.gray, lineWidth: 1)
-                        .background(Color.white)
-                )
+                .background(RoundedRectangle(cornerRadius: 8).stroke(Color.gray))
                 .frame(height: 40)
         }
     }
 }
-
-//#Preview {
-//    EditableRow()
-//}

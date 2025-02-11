@@ -7,66 +7,60 @@
 
 import Foundation
 
-@MainActor
-class LoginViewModel: ObservableObject {
-    @Published var email = "elodie.dsmln@icloud.com"
-    @Published var password = "Feu2stjean."
-    @Published var token: String?
-    @Published var isAuthenticated = false
-    @Published var loginMessage: String?
+final class LoginViewModel: ObservableObject {
+    private let onLoginSucceed: () -> Void
+    @Published var email: String = "admin@vitesse.com"
+    @Published var password: String = "test123"
+    @Published var inProgress = false
+    @Published var errorMessage = ""
     
-    private let service = VitesseRHService()
+    init(onLoginSucceed: @escaping () -> Void) {
+        self.onLoginSucceed = onLoginSucceed
+    }
     
-    func login() {
-        guard isEmailValid(email) else {
-            loginMessage = VitesseRHError.invalidParameters.localizedDescription
-            return
-        }
-        
-        guard isPasswordValid(password) else {
-            loginMessage = VitesseRHError.invalidParameters.localizedDescription
-            return
-        }
-        
+    func signIn() {
+        guard textfieldsAreValid() else { return }
+        inProgress = true
         Task {
-            do {
-                let (receivedToken, _) = try await service.login(email: email, password: password)
-                token = receivedToken
-                isAuthenticated = true
-                loginMessage = nil
-            } catch let error as VitesseRHError {
-                isAuthenticated = false
-                loginMessage = error.localizedDescription
-            } catch let error as URLError {
-                if error.code == .notConnectedToInternet {
-                    loginMessage = VitesseRHError.networkError.localizedDescription
-                } else if error.code == .timedOut {
-                    loginMessage = VitesseRHError.timeout.localizedDescription
-                } else {
-                    loginMessage = VitesseRHError.unknown.localizedDescription
-                }
-            } catch {
-                isAuthenticated = false
-                loginMessage = VitesseRHError.unknown.localizedDescription
+            let result = await VitesseRHService().logIn(withEmail: email, andPassword: password)
+            await processResult(result)
+        }
+    }
+    
+    private func processResult(_ result: Result<AuthenticationResponse, VitesseRHError>) async {
+        await MainActor.run {
+            switch result {
+            case .success(let authResponse):
+                AuthenticationManager.shared.saveAuthData(authResponse)
+                onLoginSucceed()
+            case .failure(let error):
+                errorMessage = error.localizedDescription
+                inProgress = false
             }
         }
     }
     
-    func logout() {
-        isAuthenticated = false
-        token = nil
-        email = ""
-        password = ""
-        loginMessage = nil
-    }
-    
-    private func isEmailValid(_ email: String) -> Bool {
-        let emailRegex = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
-        return NSPredicate(format: "SELF MATCHES %@", emailRegex).evaluate(with: email)
-    }
-    
-    private func isPasswordValid(_ password: String) -> Bool {
-        return password.count >= 6
+    private func textfieldsAreValid() -> Bool {
+        errorMessage = ""
+        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedPassword = password.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedEmail.isEmpty else {
+            errorMessage = VitesseRHError.validation(.emptyEmail).localizedDescription
+            return false
+        }
+        guard !trimmedPassword.isEmpty else {
+            errorMessage = VitesseRHError.validation(.emptyPassword).localizedDescription
+            return false
+        }
+        guard trimmedEmail.isValidEmail() else {
+            errorMessage = VitesseRHError.validation(.invalidEmail).localizedDescription
+            return false
+        }
+        guard trimmedPassword.count >= 6 else {
+            errorMessage = VitesseRHError.validation(.invalidPassword).localizedDescription
+            return false
+        }
+        return true
     }
 }
 

@@ -13,24 +13,25 @@ struct CandidateDetailView: View {
     @State private var isEditing = false
     var token: String
     var isAdmin: Bool
-    
+
     init(candidate: Binding<Candidate>, token: String, isAdmin: Bool) {
         _candidate = candidate
-        _viewModel = StateObject(wrappedValue: DetailViewModel(service: VitesseRHService(), token: token, candidateId: candidate.wrappedValue.id, isAdmin: isAdmin))
+        _viewModel = StateObject(wrappedValue: DetailViewModel(service: VitesseRHService(), token: token, candidate: candidate.wrappedValue, isAdmin: isAdmin))
         self.token = token
         self.isAdmin = isAdmin
     }
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 20) {
-                VStack(spacing: 15) {
-                    
+            ScrollView {
+                VStack(spacing: 20) {
                     CandidateDetailHeader(candidate: $candidate, toggleFavorite: {
                         viewModel.toggleFavorite()
                     }, isAdmin: isAdmin)
+                    .padding(.bottom, 20)  
                     
                     CandidateDetailInfo(candidate: candidate)
+                    
                     NoteView(candidate: candidate)
                     
                     Button(action: {
@@ -48,15 +49,20 @@ struct CandidateDetailView: View {
                     .sheet(isPresented: $isEditing, onDismiss: {
                         viewModel.fetchCandidateDetails()
                     }) {
-                        EditingView(candidate: $candidate, viewModel: EditingViewModel(candidate: candidate, token: viewModel.token, candidateId: candidate.id, service: viewModel.service), isEditing: $isEditing)
+                        EditingView(
+                            viewModel: EditingViewModel(candidate: candidate, token: viewModel.token, candidateId: candidate.id, service: viewModel.service),
+                            isEditing: $isEditing
+                        )
                     }
                 }
                 .padding()
                 .background(Color.white)
                 .cornerRadius(12)
                 .shadow(color: Color.gray.opacity(0.1), radius: 10, x: 0, y: 5)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .padding(.top, 30)
+                .padding(.horizontal, 16)
             }
-            .padding()
             .navigationTitle("Candidate Details")
             .navigationBarTitleDisplayMode(.inline)
             .alert(isPresented: .constant(viewModel.errorMessage != nil)) {
@@ -69,7 +75,3 @@ struct CandidateDetailView: View {
         }
     }
 }
-
-#Preview(body: {
-    CandidateDetailView(candidate: .constant(Candidate(id: "dfghj", firstName: "Elo", lastName: "Desm", email: "elo.desl@icloud.com", phone: "0660123626", isFavorite: true)) , token: "fghjkl", isAdmin: true)
-})

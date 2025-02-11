@@ -6,103 +6,118 @@
 //
 
 import Foundation
+import Combine
 
-@MainActor
-class CandidateListViewModel: ObservableObject {
-    @Published var candidates = [Candidate]()
-    @Published var filteredCandidates = [Candidate]()
-    @Published var isEditMode: Bool = false
-    @Published var selectedCandidates = Set<Candidate>()
-    @Published var errorMessage: String?
-    @Published var isLoading: Bool = false
+enum EditingMode {
+    case inactive, active
+}
+
+final class CandidateListViewModel: ObservableObject {
+    private let onSignOut: () -> Void
+    private let service = VitesseRHService()
     
-    @Published var searchText: String = ""
-    @Published var showFavoritesOnly: Bool = false
+    @Published private(set) var allCandidates: [Candidate] = [] {
+        didSet { applyFilter() }
+    }
+    @Published var candidates: [Candidate] = []
+    @Published var filter: (search: String, favorites: Bool) = ("", false) {
+        didSet { applyFilter() }
+    }
+    @Published var selection: Set<String> = []
+    @Published var editMode: EditingMode = .inactive
+    @Published private(set) var errorMessage = ""
+    @Published private(set) var inProgress = false
     
-    private let service: VitesseRHService
-    private var token: String
+    var isAdmin: Bool { AuthenticationManager.shared.isAdmin() }
+    var inEditMode: Bool { editMode == .active }
     
-    init(service: VitesseRHService = VitesseRHService(), token: String) {
-        self.service = service
-        self.token = token
-        setupBindings()
-        fetchCandidates()
+    init(onSignOut: @escaping () -> Void) {
+        self.onSignOut = onSignOut
+        getCandidates()
+        NotificationCenter.default.addObserver(self, selector: #selector(needUpdate), name: .needUpdate, object: nil)
     }
     
-    
-    
-    private func handleError(_ error: Error) {
-        DispatchQueue.main.async {
-            if let vitesseError = error as? VitesseRHError {
-                self.errorMessage = vitesseError.localizedDescription
-            } else {
-                self.errorMessage = VitesseRHError.unknown.localizedDescription
-            }
-        }
-    }
-    
-    private func setupBindings() {
-        $searchText
-            .combineLatest($showFavoritesOnly, $candidates)
-            .map { searchText, showFavoritesOnly, candidates in
-                candidates.filter { candidate in
-                    let matchesSearchText = searchText.isEmpty || candidate.firstName.lowercased().contains(searchText.lowercased()) || candidate.lastName.lowercased().contains(searchText.lowercased())
-                    let matchesFavorites = !showFavoritesOnly || candidate.isFavorite
-                    return matchesSearchText && matchesFavorites
-                }
-            }
-            .assign(to: &$filteredCandidates)
-    }
-    
-    
-    func fetchCandidates() {
-        isLoading = true
+    func getCandidates() {
+        guard !inProgress else { return }
+        inProgress = true
         Task {
-            do {
-                let candidates = try await service.getCandidates(token: token)
-                DispatchQueue.main.async {
-                    self.candidates = candidates
-                    self.filteredCandidates = candidates
-                    self.isLoading = false
+            let result = await service.getCandidates()
+            await MainActor.run {
+                switch result {
+                case .success(let candidates):
+                    self.allCandidates = candidates
+                    self.errorMessage = ""
+                case .failure(let error):
+                    self.errorMessage = "\(error.title) \(error.localizedDescription)"
                 }
-            } catch {
-                handleError(error)
-                isLoading = false
+                self.inProgress = false
             }
         }
     }
     
-    
-    func toggleEditMode() {
-        isEditMode.toggle()
-        selectedCandidates.removeAll()
+    func editModeToggle() {
+        editMode = (editMode == .active) ? .inactive : .active
+        if editMode == .inactive { selection.removeAll() }
     }
     
-    func toggleSelection(for candidate: Candidate) {
-        if selectedCandidates.contains(candidate) {
-            selectedCandidates.remove(candidate)
-        } else {
-            selectedCandidates.insert(candidate)
-        }
-    }
-    
-    func deleteSelectedCandidates() {
+    func deleteSelection() {
+        guard !selection.isEmpty else { return }
+        inProgress = true
         Task {
-            do {
-                for candidate in selectedCandidates {
-                    try await service.deleteCandidate(token: token, candidateId: candidate.id)
-                }
-                selectedCandidates.removeAll()
-                fetchCandidates()
-            } catch let error as VitesseRHError {
-                DispatchQueue.main.async {
-                    self.errorMessage = error.localizedDescription
-                }
-            } catch {
-                DispatchQueue.main.async {
-                    self.errorMessage = VitesseRHError.unknown.localizedDescription
-                }
+            for candidateId in selection {
+                _ = await service.deleteCandidate(withId: candidateId)
+            }
+            await MainActor.run {
+                self.allCandidates.removeAll { self.selection.contains($0.id) }
+                self.selection.removeAll()
+                self.editMode = .inactive
+                self.inProgress = false
             }
         }
+    }
+    
+    func signOut() {
+        onSignOut()
+    }
+    
+    func createCandidate(firstName: String, lastName: String, email: String, phone: String, linkedinURL: String, note: String) {
+        inProgress = true
+        let newCandidate = Candidate(
+            id: UUID().uuidString,
+            firstName: firstName,
+            lastName: lastName,
+            email: email,
+            phone: phone,
+            note: note,
+            linkedinURL: linkedinURL,
+            isFavorite: false
+        )
+        Task {
+            let result = await service.addCandidate(candidate: newCandidate)
+            await MainActor.run {
+                switch result {
+                case .success(let candidate):
+                    self.allCandidates.append(candidate)
+                case .failure(let error):
+                    self.errorMessage = "\(error.title) \(error.localizedDescription)"
+                }
+                self.inProgress = false
+            }
+        }
+    }
+    
+    private func applyFilter() {
+        let searchLowercased = filter.search.lowercased()
+        candidates = allCandidates.filter {
+            let matchesFavorites = filter.favorites ? $0.isFavorite : true
+            let matchesSearch = searchLowercased.isEmpty ||
+                $0.firstName.lowercased().contains(searchLowercased) ||
+                $0.lastName.lowercased().contains(searchLowercased)
+            return matchesFavorites && matchesSearch
+        }
+    }
+    
+    @objc private func needUpdate() {
+        getCandidates()
     }
 }

@@ -8,7 +8,7 @@
 import Foundation
 
 @MainActor
-class EditingViewModel: ObservableObject {
+final class EditingViewModel: ObservableObject {
     @Published var candidate: Candidate
     var token: String
     var candidateId: String
@@ -22,60 +22,31 @@ class EditingViewModel: ObservableObject {
         self.service = service
     }
     
-    func saveChanges(for candidate: Candidate) {
-        guard isValidEmail(candidate.email) else {
-            self.errorMessage = VitesseRHError.invalidEmail.localizedDescription
+    func saveChanges() async {
+        errorMessage = nil
+        
+        guard candidate.email.isValidEmail() else {
+            self.errorMessage = "Invalid email format."
+            return
+        }
+        if !candidate.phone.isEmpty && !candidate.phone.isValidFrPhone() {
+            self.errorMessage = "Invalid phone number format."
+            return
+        }
+        candidate.phone.applyFrPhonePattern()
+        if let linkedinURL = candidate.linkedinURL, !linkedinURL.isEmpty, URL(string: linkedinURL) == nil {
+            self.errorMessage = "Invalid LinkedIn URL."
             return
         }
         
-        guard isValidFrenchPhoneNumber(candidate.phone) else {
-            self.errorMessage = VitesseRHError.invalidPhone.localizedDescription
-            return
-        }
-        
-        if let linkedinURL = candidate.linkedinURL, !linkedinURL.isEmpty {
-            guard isValidURL(linkedinURL) else {
-                self.errorMessage = VitesseRHError.invalidLinkedInURL.localizedDescription
-                return
+        let result = await service.updateCandidate(candidate: candidate)
+        await MainActor.run {
+            switch result {
+            case .success(let updatedCandidate):
+                self.candidate = updatedCandidate
+            case .failure(let error):
+                self.errorMessage = error.localizedDescription
             }
         }
-        
-        Task {
-            do {
-                try await service.updateCandidate(token: token, candidateId: candidate.id, candidate: candidate)
-                DispatchQueue.main.async {
-                    self.errorMessage = nil
-                }
-            } catch let error as VitesseRHError {
-                DispatchQueue.main.async {
-                    self.errorMessage = error.localizedDescription
-                }
-            } catch {
-                DispatchQueue.main.async {
-                    self.errorMessage = VitesseRHError.networkError.localizedDescription
-                }
-            }
-        }
-    }
-    
-    func isValidEmail(_ email: String) -> Bool {
-        let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
-        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
-        return emailPredicate.evaluate(with: email)
-    }
-    
-    func isValidFrenchPhoneNumber(_ phoneNumber: String) -> Bool {
-        let phoneRegex = "^((\\+33|0)[1-9])((\\s|\\-)?[0-9]{2}){4}$"
-        let phonePredicate = NSPredicate(format: "SELF MATCHES %@", phoneRegex)
-        return phonePredicate.evaluate(with: phoneNumber)
-    }
-    
-    func isValidURL(_ urlString: String) -> Bool {
-        if let urlComponents = URLComponents(string: urlString),
-           urlComponents.scheme != nil,
-           urlComponents.host != nil {
-            return true
-        }
-        return false
     }
 }

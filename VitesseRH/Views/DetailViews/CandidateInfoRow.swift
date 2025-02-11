@@ -10,29 +10,19 @@ import SwiftUI
 struct CandidateInfoRow: View {
     let label: String
     let value: String
-    let isLarge: Bool
     
     var body: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 5) {
             Text(label)
                 .font(.subheadline)
                 .foregroundColor(.gray)
-                .padding(.bottom, 5)
             
             TextField("", text: .constant(value))
-                .font(isLarge ? .title2 : .body)
+                .font( .body)
                 .foregroundColor(.black)
-                .padding(8)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.gray, lineWidth: 1)
-                        .background(Color.white)
-                )
-                .frame(height: isLarge ? 40 : 30)
+                .padding(.vertical, 8)
+                .disabled(true)
+                .frame(height: 30)
         }
     }
 }
-
-//#Preview {
-//    CandidateInfoRow()
-//}

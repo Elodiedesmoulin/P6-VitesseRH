@@ -6,64 +6,48 @@
 //
 
 import Foundation
+import SwiftUI
 
-@MainActor
-class DetailViewModel: ObservableObject {
-    @Published var candidate: Candidate?
-    @Published var errorMessage: String?
-    
-    var service: VitesseRHService
+final class DetailViewModel: ObservableObject {
+    let service: VitesseRHService
+    @Published var candidate: Candidate
+    @Published var errorMessage: String? = nil
     var token: String
-    var candidateId: String
     var isAdmin: Bool
-    
-    init(service: VitesseRHService = VitesseRHService(), token: String, candidateId: String, isAdmin: Bool) {
+
+    init(service: VitesseRHService, token: String, candidate: Candidate, isAdmin: Bool) {
         self.service = service
         self.token = token
-        self.candidateId = candidateId
+        self.candidate = candidate
         self.isAdmin = isAdmin
-        fetchCandidateDetails()
     }
+
+    func toggleFavorite() {
+           candidate.isFavorite.toggle()
+                      Task {
+               let result = await service.favoriteToggle(forId: candidate.id)
+               await MainActor.run {
+                   switch result {
+                   case .success(let updatedCandidate):
+                       self.candidate = updatedCandidate
+                   case .failure(let error):
+                       self.candidate.isFavorite.toggle()
+                       self.errorMessage = error.localizedDescription
+                   }
+               }
+           }
+       }
+   
     
     func fetchCandidateDetails() {
         Task {
-            do {
-                let candidateDetails = try await service.getCandidateDetails(token: token, candidateId: candidateId)
-                DispatchQueue.main.async {
-                    self.candidate = candidateDetails
-                }
-            } catch let error as VitesseRHError {
-                DispatchQueue.main.async {
+            let result = await service.getCandidate(withId: candidate.id)
+            await MainActor.run {
+                switch result {
+                case .success(let updatedCandidate):
+                    self.candidate = updatedCandidate
+                case .failure(let error):
                     self.errorMessage = error.localizedDescription
-                }
-            } catch {
-                DispatchQueue.main.async {
-                    self.errorMessage = VitesseRHError.unknown.localizedDescription
-                }
-            }
-        }
-    }
-    
-    func toggleFavorite() {
-        guard let candidate = candidate, isAdmin else {
-            DispatchQueue.main.async {
-                self.errorMessage = VitesseRHError.permissionDenied.localizedDescription
-            }
-            return
-        }
-        Task {
-            do {
-                try await service.toggleFavoriteStatus(token: token, candidateId: candidate.id)
-                DispatchQueue.main.async {
-                    self.candidate?.isFavorite.toggle()
-                }
-            } catch let error as VitesseRHError {
-                DispatchQueue.main.async {
-                    self.errorMessage = error.localizedDescription
-                }
-            } catch {
-                DispatchQueue.main.async {
-                    self.errorMessage = VitesseRHError.unknown.localizedDescription
                 }
             }
         }

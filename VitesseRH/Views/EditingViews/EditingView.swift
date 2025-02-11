@@ -8,7 +8,6 @@
 import SwiftUI
 
 struct EditingView: View {
-    @Binding var candidate: Candidate
     @ObservedObject var viewModel: EditingViewModel
     @Binding var isEditing: Bool
     
@@ -20,23 +19,23 @@ struct EditingView: View {
                 .padding(.bottom, 20)
             
             VStack(spacing: 15) {
-                EditableRow(label: "First Name", text: $candidate.firstName)
-                EditableRow(label: "Last Name", text: $candidate.lastName)
-                EditableRow(label: "Email", text: $candidate.email)
-                EditableRow(label: "Phone", text: $candidate.phone)
+                EditableRow(label: "First Name", text: $viewModel.candidate.firstName)
+                EditableRow(label: "Last Name", text: $viewModel.candidate.lastName)
+                EditableRow(label: "Email", text: $viewModel.candidate.email)
+                EditableRow(label: "Phone", text: $viewModel.candidate.phone)
                 EditableRow(label: "LinkedIn", text: Binding(
-                    get: { candidate.linkedinURL ?? "" },
-                    set: { candidate.linkedinURL = $0 }
+                    get: { viewModel.candidate.linkedinURL ?? "" },
+                    set: { viewModel.candidate.linkedinURL = $0 }
                 ))
                 EditableRow(label: "Note", text: Binding(
-                    get: { candidate.note ?? "" },
-                    set: { candidate.note = $0 }
+                    get: { viewModel.candidate.note ?? "" },
+                    set: { viewModel.candidate.note = $0 }
                 ))
             }
             .padding()
             .background(Color.white)
             .cornerRadius(12)
-            .shadow(color: Color.gray.opacity(0.1), radius: 10, x: 0, y: 5)
+            .shadow(radius: 10)
             
             if let errorMessage = viewModel.errorMessage {
                 Text(errorMessage)
@@ -45,17 +44,20 @@ struct EditingView: View {
             }
             
             Button("Save Changes") {
-                viewModel.saveChanges(for: candidate)
-                if viewModel.errorMessage == nil {
-                    isEditing = false
+                Task {
+                    await viewModel.saveChanges()
+                    if viewModel.errorMessage == nil {
+                        isEditing = false
+                        NotificationCenter.default.post(name: .needUpdate, object: nil)
+                    }
                 }
             }
-            .frame(maxWidth: .infinity)
             .padding()
+            .frame(maxWidth: .infinity)
             .background(Color.black)
             .foregroundColor(.white)
             .cornerRadius(10)
-            .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
+            .shadow(radius: 5)
         }
         .padding()
         .onTapGesture {
@@ -63,3 +65,4 @@ struct EditingView: View {
         }
     }
 }
+

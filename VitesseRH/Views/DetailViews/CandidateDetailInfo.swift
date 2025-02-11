@@ -12,14 +12,10 @@ struct CandidateDetailInfo: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            CandidateInfoRow(label: "Email", value: candidate.email, isLarge: false)
-            CandidateInfoRow(label: "Phone", value: candidate.phone, isLarge: false)
-            CandidateInfoRow(label: "LinkedIn", value: candidate.linkedinURL ?? "Not provided", isLarge: false)
+            CandidateInfoRow(label: "Email", value: candidate.email)
+            CandidateInfoRow(label: "Phone", value: candidate.phone)
+            CandidateInfoRow(label: "LinkedIn", value: candidate.linkedinURL ?? "Not provided")
         }
         .padding(.horizontal)
     }
 }
-
-//#Preview {
-//    CandidateDetailInfo()
-//}

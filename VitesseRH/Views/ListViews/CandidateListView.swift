@@ -8,114 +8,148 @@
 import SwiftUI
 
 struct CandidateListView: View {
-    @StateObject private var viewModel: CandidateListViewModel
-    let token: String
-    
-    init(token: String) {
-        self.token = token
-        _viewModel = StateObject(wrappedValue: CandidateListViewModel(token: token))
-    }
+    @StateObject private var viewModel = CandidateListViewModel(onSignOut: { })
+    @State private var showingCreateCandidate = false
     
     var body: some View {
-        VStack {
-            HStack(spacing: 15) {
-                Button(action: {
-                    viewModel.toggleEditMode()
-                }) {
-                    HStack {
-                        Image(systemName: viewModel.isEditMode ? "arrow.uturn.backward.circle.fill" : "pencil.circle.fill")
-                        Text(viewModel.isEditMode ? "Return" : "Edit")
-                    }
-                    .padding()
-                    .background(Color(.black))
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
-                    .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
-                }
+        NavigationStack {
+            VStack(spacing: 16) {
+                headerView()
                 
-                TextField("Search by name or surname", text: $viewModel.searchText)
-                    .padding()
-                    .background(Color.white)
-                    .cornerRadius(10)
-                    .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
-                
-                if viewModel.isEditMode {
-                    Button(action: {
-                        viewModel.deleteSelectedCandidates()
-                    }) {
-                        Image(systemName: "trash")
+                if viewModel.inProgress {
+                    ProgressView("Loading candidates...")
+                        .padding()
+                } else {
+                    candidateList()
+                    
+                    if !viewModel.errorMessage.isEmpty {
+                        Text(viewModel.errorMessage)
                             .foregroundColor(.red)
                             .padding()
-                            .background(Color.white)
-                            .cornerRadius(10)
-                            .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
                     }
-                } else {
-                    Button(action: {
-                        viewModel.showFavoritesOnly.toggle()
-                    }) {
-                        Image(systemName: viewModel.showFavoritesOnly ? "star.fill" : "star")
-                            .foregroundColor(viewModel.showFavoritesOnly ? .yellow : .gray)
-                            .padding()
-                            .background(Color.white)
-                            .cornerRadius(10)
-                            .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
-                    }
-                }
-            }
-            .padding(.horizontal)
-            .padding(.top, 10)
-            
-            if viewModel.isLoading {
-                ProgressView("Loading candidates...")
-                    .padding()
-            } else {
-                List(viewModel.filteredCandidates) { candidate in
-                    HStack {
-                        if viewModel.isEditMode {
-                            Button(action: {
-                                viewModel.toggleSelection(for: candidate)
-                            }) {
-                                Image(systemName: viewModel.selectedCandidates.contains(candidate) ? "checkmark.circle.fill" : "circle")
-                                    .foregroundColor(.black)
-                            }
-                        }
-                        
-                        CandidateRowView(viewModel: viewModel, candidate: candidate, token: token, isEditMode: viewModel.isEditMode)
-                        
-                        Spacer()
-                        
-                        Image(systemName: candidate.isFavorite ? "star.fill" : "star")
-                            .foregroundColor(candidate.isFavorite ? .yellow : .gray)
-                    }
-                    .padding(.vertical, 5)
-                }
-                .navigationTitle("Candidates")
-                .alert(isPresented: .constant(viewModel.errorMessage != nil)) {
-                    Alert(
-                        title: Text("Error"),
-                        message: Text(viewModel.errorMessage ?? "An unknown error occurred."),
-                        dismissButton: .default(Text("OK"))
-                    )
                 }
                 
-                if !viewModel.isEditMode {
-                    NavigationLink(destination: CreateCandidateView(viewModel: CreateCandidateViewModel(token: token), token: token)) {
-                        Text("Create New Candidate")
-                            .font(.headline)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(Color(.black))
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
-                            .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
-                    }
-                    .padding()
+                if !viewModel.inEditMode {
+                    createCandidateButton()
+                }
+            }
+            .padding()
+            .onAppear {
+                viewModel.getCandidates()
+            }
+            .navigationTitle("Candidates")
+        }
+    }
+    
+    private func headerView() -> some View {
+        HStack(spacing: 15) {
+            Button(action: { viewModel.editModeToggle() }) {
+                Label(
+                    viewModel.inEditMode ? "Return" : "Edit",
+                    systemImage: viewModel.inEditMode ? "arrow.uturn.backward.circle.fill" : "pencil.circle.fill"
+                )
+                .padding()
+                .background(Color.black)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+                .shadow(radius: 5)
+            }
+            
+            TextField("Search by name or surname", text: $viewModel.filter.search)
+                .padding(10)
+                .background(Color.white)
+                .cornerRadius(10)
+                .shadow(radius: 5)
+            
+            if viewModel.inEditMode {
+                Button(action: { viewModel.deleteSelection() }) {
+                    Image(systemName: "trash")
+                        .foregroundColor(.red)
+                        .padding()
+                        .background(Color.white)
+                        .cornerRadius(10)
+                        .shadow(radius: 5)
+                }
+            } else {
+                Button(action: { viewModel.filter.favorites.toggle() }) {
+                    Image(systemName: viewModel.filter.favorites ? "star.fill" : "star")
+                        .foregroundColor(viewModel.filter.favorites ? .yellow : .gray)
+                        .padding()
+                        .background(Color.white)
+                        .cornerRadius(10)
+                        .shadow(radius: 5)
                 }
             }
         }
-        .onAppear {
-            viewModel.fetchCandidates()
+        .padding(.horizontal)
+        .padding(.top, 10)
+    }
+    
+    private func candidateList() -> some View {
+        List {
+            ForEach(viewModel.candidates) { candidate in
+                if let index = viewModel.candidates.firstIndex(where: { $0.id == candidate.id }) {
+                    if viewModel.inEditMode {
+                        CandidateRowView(
+                            candidate: candidate,
+                            isInEditMode: viewModel.inEditMode,
+                            isSelected: viewModel.selection.contains(candidate.id),
+                            toggleSelection: {
+                                if viewModel.selection.contains(candidate.id) {
+                                    viewModel.selection.remove(candidate.id)
+                                } else {
+                                    viewModel.selection.insert(candidate.id)
+                                }
+                            }
+                        )
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            if viewModel.selection.contains(candidate.id) {
+                                viewModel.selection.remove(candidate.id)
+                            } else {
+                                viewModel.selection.insert(candidate.id)
+                            }
+                        }
+                    } else {
+                        NavigationLink(
+                            destination: CandidateDetailView(
+                                candidate: $viewModel.candidates[index],
+                                token: AuthenticationManager.shared.getToken() ?? "",
+                                isAdmin: viewModel.isAdmin
+                            )
+                        ) {
+                            CandidateRowView(
+                                candidate: candidate,
+                                isInEditMode: viewModel.inEditMode,
+                                isSelected: viewModel.selection.contains(candidate.id),
+                                toggleSelection: {
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        .listStyle(PlainListStyle())
+    }
+    
+    
+    private func createCandidateButton() -> some View {
+        Button(action: {
+            showingCreateCandidate.toggle()
+        }) {
+            Text("+ New Candidate")
+                .font(.headline)
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(Color.black)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+                .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
+        }
+        .padding()
+        .sheet(isPresented: $showingCreateCandidate) {
+            CreateCandidateView()
         }
     }
 }

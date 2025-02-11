@@ -8,36 +8,29 @@
 import SwiftUI
 
 struct CandidateRowView: View {
-    @ObservedObject var viewModel: CandidateListViewModel
-    var candidate: Candidate
-    var token: String
-    var isEditMode: Bool
+    let candidate: Candidate
+    let isInEditMode: Bool
+    let isSelected: Bool
+    let toggleSelection: () -> Void
     
     var body: some View {
         HStack {
-            if isEditMode {
-                Text(candidate.firstName + " " + candidate.lastName)
-                    .font(.headline)
-            } else {
-                NavigationLink(
-                    destination: CandidateDetailView(candidate: $viewModel.candidates.first(where: { $0.id == candidate.id })!, token: token, isAdmin: true)
-                ) {
-                    Text(candidate.firstName + " " + candidate.lastName)
-                        .font(.headline)
-                        .foregroundColor(.primary)
+            if isInEditMode {
+                Button(action: toggleSelection) {
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .foregroundColor(.black)
                 }
-                .buttonStyle(PlainButtonStyle())
             }
+            
+            Text(candidate.firstName + " " + candidate.lastName)
+                .font(.headline)
+            
             Spacer()
+            
+            Image(systemName: candidate.isFavorite ? "star.fill" : "star")
+                .foregroundColor(candidate.isFavorite ? .yellow : .gray)
         }
-        .padding(.vertical, 8)
-        .alert(isPresented: .constant(viewModel.errorMessage != nil)) {
-            Alert(
-                title: Text("Error"),
-                message: Text(viewModel.errorMessage ?? "An unknown error occurred."),
-                dismissButton: .default(Text("OK"))
-            )
-        }
+        .padding(.vertical, 5)
     }
 }
 

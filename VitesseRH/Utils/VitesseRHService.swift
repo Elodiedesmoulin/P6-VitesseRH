@@ -7,128 +7,133 @@
 
 import Foundation
 
-class VitesseRHService {
+class VitesseRHService: ApiService {
     
-    let baseUrl = "http://127.0.0.1:8080"
-    let session: SessionProtocol
-    
-    init(session: SessionProtocol = URLSession.shared) {
-        self.session = session
+    private func decodeResponse<T: Decodable>(_ type: T.Type, from data: Data) -> Result<T, VitesseRHError> {
+        do {
+            let result = try JSONDecoder().decode(T.self, from: data)
+            return .success(result)
+        } catch {
+            return .failure(.server(.invalidResponse))
+        }
     }
     
-    
-    
-    private func createRequest(
-        endpoint: String,
-        method: String,
-        token: String? = nil,
-        parameters: [String: Any]? = nil
-    ) throws -> URLRequest {
-        guard let url = URL(string: "\(baseUrl)\(endpoint)") else {
-            throw VitesseRHError.invalidUrl
+    func getCandidates() async -> Result<[Candidate], VitesseRHError> {
+        guard let url = ApiPath.candidates.url else { return .failure(.network(.invalidURL))}
+        let config = RequestConfig(method: .get, url: url, parameters: nil, requiresAuth: true)
+        let result = await executeRequest(config: config)
+        switch result {
+        case .success(let data):
+            return decodeResponse([Candidate].self, from: data)
+        case .failure(let error):
+            return .failure(error)
         }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = method
-        if let token = token {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-        if let parameters = parameters {
-            guard let jsonData = try? JSONSerialization.data(withJSONObject: parameters) else {
-                throw VitesseRHError.invalidParameters
-            }
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = jsonData
-        }
-        return request
     }
     
-    private func handleResponse<T: Decodable>(_ data: Data, _ response: URLResponse, decodingType: T.Type) throws -> T {
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw VitesseRHError.invalidResponse
+    func getCandidate(withId candidateId: String) async -> Result<Candidate, VitesseRHError> {
+        guard let url = ApiPath.candidate(candidateId).url else { return .failure(.network(.invalidURL))}
+        let config = RequestConfig(method: .get, url: url, parameters: nil, requiresAuth: true)
+        let result = await executeRequest(config: config)
+        switch result {
+        case .success(let data):
+            return decodeResponse(Candidate.self, from: data)
+        case .failure(let error):
+            return .failure(error)
         }
-        
-        if httpResponse.statusCode == 401 {
-            throw VitesseRHError.invalidAuthentication
-        } else if httpResponse.statusCode >= 400 {
-            throw VitesseRHError.unknown
-        }
-        
-        return try JSONDecoder().decode(T.self, from: data)
     }
     
-    
-    
-    // Authentication
-    func login(email: String, password: String) async throws -> (String, Bool) {
-        let parameters = ["email": email, "password": password]
-        let request = try createRequest(endpoint: "/user/auth", method: "POST", parameters: parameters)
-        let (data, response) = try await session.data(for: request)
-        let authenticationResponse: AuthenticationResponse = try handleResponse(data, response, decodingType: AuthenticationResponse.self)
-        return (authenticationResponse.token, authenticationResponse.isAdmin)
-    }
-    
-    func register(firstName: String, lastName: String, email: String, password: String) async throws {
-        let parameters = [
-            "firstName": firstName,
-            "lastName": lastName,
-            "email": email,
-            "password": password
+    func addCandidate(candidate: Candidate) async -> Result<Candidate, VitesseRHError> {
+        guard let url = ApiPath.candidates.url else { return .failure(.network(.invalidURL))}
+        let parameters: [String: AnyHashable] = [
+            "email": candidate.email,
+            "note": candidate.note ?? "",
+            "linkedinURL": candidate.linkedinURL ?? "",
+            "firstName": candidate.firstName,
+            "lastName": candidate.lastName,
+            "phone": candidate.phone
         ]
-        let request = try createRequest(endpoint: "/user/register", method: "POST", parameters: parameters)
-        let (_, response) = try await session.data(for: request)
-        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 201 {
-            throw VitesseRHError.invalidResponse
+        let config = RequestConfig(method: .post, url: url, parameters: parameters, requiresAuth: true)
+        let result = await executeRequest(config: config)
+        switch result {
+        case .success(let data):
+            return decodeResponse(Candidate.self, from: data)
+        case .failure(let error):
+            return .failure(error)
         }
     }
     
-    
-    
-    
-    // Candidates
-    func getCandidates(token: String) async throws -> [Candidate] {
-        let request = try createRequest(endpoint: "/candidate", method: "GET", token: token)
-        let (data, response) = try await session.data(for: request)
-        return try handleResponse(data, response, decodingType: [Candidate].self)
-    }
-    
-    func getCandidateDetails(token: String, candidateId: String) async throws -> Candidate {
-        let request = try createRequest(endpoint: "/candidate/\(candidateId)", method: "GET", token: token)
-        let (data, response) = try await session.data(for: request)
-        return try handleResponse(data, response, decodingType: Candidate.self)
-    }
-    
-    func createCandidate(token: String, candidate: Candidate) async throws {
-        let parameters = try candidate.asDictionary()
-        let request = try createRequest(endpoint: "/candidate", method: "POST", token: token, parameters: parameters)
-        let (_, response) = try await session.data(for: request)
-        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
-            throw VitesseRHError.invalidResponse
+    func updateCandidate(candidate: Candidate) async -> Result<Candidate, VitesseRHError> {
+        guard let url = ApiPath.candidate(candidate.id).url else { return .failure(.network(.invalidURL))}
+        let parameters: [String: AnyHashable] = [
+            "email": candidate.email,
+            "note": candidate.note ?? "",
+            "linkedinURL": candidate.linkedinURL ?? "",
+            "firstName": candidate.firstName,
+            "lastName": candidate.lastName,
+            "phone": candidate.phone
+        ]
+        let config = RequestConfig(method: .put, url: url, parameters: parameters, requiresAuth: true)
+        let result = await executeRequest(config: config)
+        switch result {
+        case .success(let data):
+            return decodeResponse(Candidate.self, from: data)
+        case .failure(let error):
+            return .failure(error)
         }
     }
     
-    func updateCandidate(token: String, candidateId: String, candidate: Candidate) async throws {
-        let parameters = try candidate.asDictionary()
-        let request = try createRequest(endpoint: "/candidate/\(candidateId)", method: "PUT", token: token, parameters: parameters)
-        let (_, response) = try await session.data(for: request)
-        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
-            throw VitesseRHError.invalidResponse
+    func favoriteToggle(forId candidateId: String) async -> Result<Candidate, VitesseRHError> {
+        guard let url = ApiPath.favorite(candidateId).url else { return .failure(.network(.invalidURL))}
+        let config = RequestConfig(method: .post, url: url, parameters: nil, requiresAuth: true)
+        let result = await executeRequest(config: config)
+        switch result {
+        case .success(let data):
+            return decodeResponse(Candidate.self, from: data)
+        case .failure(let error):
+            return .failure(error)
         }
     }
     
-    func deleteCandidate(token: String, candidateId: String) async throws {
-        let request = try createRequest(endpoint: "/candidate/\(candidateId)", method: "DELETE", token: token)
-        let (_, response) = try await session.data(for: request)
-        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
-            throw VitesseRHError.invalidResponse
+    func deleteCandidate(withId candidateId: String) async -> Result<Bool, VitesseRHError> {
+        guard let url = ApiPath.candidate(candidateId).url else { return .failure(.network(.invalidURL))}
+        let config = RequestConfig(method: .delete, url: url, parameters: nil, requiresAuth: true)
+        let result = await executeRequest(config: config)
+        switch result {
+        case .success:
+            return .success(true)
+        case .failure(let error):
+            return .failure(error)
         }
     }
     
-    func toggleFavoriteStatus(token: String, candidateId: String) async throws {
-        let request = try createRequest(endpoint: "/candidate/\(candidateId)/favorite", method: "POST", token: token)
-        let (_, response) = try await session.data(for: request)
-        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode >= 400 {
-            throw VitesseRHError.invalidResponse
+    func logIn(withEmail email: String, andPassword password: String) async -> Result<AuthenticationResponse, VitesseRHError> {
+        guard let url = ApiPath.auth.url else { return .failure(.network(.invalidURL))}
+        let parameters: [String: AnyHashable] = [UserConstants.email: email, UserConstants.password: password]
+        let config = RequestConfig(method: .post, url: url, parameters: parameters, requiresAuth: false)
+        let result = await executeRequest(config: config)
+        switch result {
+        case .success(let data):
+            return decodeResponse(AuthenticationResponse.self, from: data)
+        case .failure(let error):
+            return .failure(error)
+        }
+    }
+    
+    func register(mail: String, password: String, firstName: String, lastName: String) async -> Result<Bool, VitesseRHError> {
+        guard let url = ApiPath.register.url else { return .failure(.network(.invalidURL))}
+        let parameters: [String: AnyHashable] = [
+            UserConstants.email: mail,
+            UserConstants.password: password,
+            UserConstants.firstName: firstName,
+            UserConstants.lastName: lastName
+        ]
+        let config = RequestConfig(method: .post, url: url, parameters: parameters, requiresAuth: false)
+        let result = await executeRequest(config: config)
+        switch result {
+        case .success:
+            return .success(true)
+        case .failure(let error):
+            return .failure(error)
         }
     }
 }

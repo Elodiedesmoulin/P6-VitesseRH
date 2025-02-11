@@ -7,73 +7,78 @@
 
 import Foundation
 
-@MainActor
-class CreateCandidateViewModel: ObservableObject {
-    @Published var errorMessage: String?
-    @Published var creatingMessage: String?
+final class CreateCandidateViewModel: ObservableObject {
+    private let service = VitesseRHService()
     
-    private let service: VitesseRHService
-    private var token: String
+    @Published var firstName: String = ""
+    @Published var lastName: String = ""
+    @Published var email: String = ""
+    @Published var phone: String = ""
+    @Published var linkedinURL: String = ""
+    @Published var note: String = ""
     
-    init(service: VitesseRHService = VitesseRHService(), token: String) {
-        self.service = service
-        self.token = token
+    @Published private(set) var addInProgress = false
+    @Published private(set) var dismissView = false
+    @Published private(set) var errorMessage = ""
+    
+    var detailsHaveBeenEdited: Bool {
+        ![firstName, lastName, email, linkedinURL, phone, note].allSatisfy { $0.isEmpty }
     }
     
-    
-    
-    private func handleSuccess() {
-        self.errorMessage = nil
-        self.creatingMessage = "Candidate created successfully."
-    }
-    
-    private func handleError(error: VitesseRHError) {
-        self.errorMessage = error.localizedDescription
-    }
-    
-    
-    
-    func addCandidate(candidate: Candidate) {
-        guard isValidEmail(candidate.email) else {
-            self.errorMessage = VitesseRHError.invalidEmail.localizedDescription
-            return
-        }
-        
-        guard isValidFrenchPhoneNumber(candidate.phone) else {
-            self.errorMessage = VitesseRHError.invalidPhone.localizedDescription
-            return
-        }
-        
-        guard isNameValid(candidate.firstName, candidate.lastName) else {
-            self.errorMessage = VitesseRHError.invalidName.localizedDescription
-            return
-        }
-
+    func addCandidate() {
+        guard textfieldsAreValid() else { return }
+        addInProgress = true
+        let newCandidate = Candidate(
+            id: "",
+            firstName: firstName,
+            lastName: lastName,
+            email: email,
+            phone: phone,
+            note: note,
+            linkedinURL: linkedinURL,
+            isFavorite: false
+        )
         Task {
-            do {
-                try await service.createCandidate(token: token, candidate: candidate)
-                self.handleSuccess()
-            } catch let error as VitesseRHError {
-                self.handleError(error: error)
-            } catch {
-                self.handleError(error: VitesseRHError.networkError)
-            }
+            let result = await service.addCandidate(candidate: newCandidate)
+            await processResult(result)
         }
     }
     
-    func isValidEmail(_ email: String) -> Bool {
-        let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
-        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
-        return emailPredicate.evaluate(with: email)
+    private func processResult(_ result: Result<Candidate, VitesseRHError>) async {
+        await MainActor.run {
+            switch result {
+            case .success:
+                NotificationCenter.default.post(name: .needUpdate, object: nil)
+                self.dismissView = true
+            case .failure(let error):
+                self.errorMessage = "\(error.title) \(error.localizedDescription)"
+            }
+            self.addInProgress = false
+        }
     }
     
-    func isValidFrenchPhoneNumber(_ phoneNumber: String) -> Bool {
-        let phoneRegex = "^((\\+33|0)[1-9])((\\s|\\-)?[0-9]{2}){4}$"
-        let phonePredicate = NSPredicate(format: "SELF MATCHES %@", phoneRegex)
-        return phonePredicate.evaluate(with: phoneNumber)
-    }
-    
-    private func isNameValid(_ firstName: String, _ lastName: String) -> Bool {
-        return firstName.count >= 3 && lastName.count >= 3
+    private func textfieldsAreValid() -> Bool {
+        guard !firstName.isEmpty, !lastName.isEmpty else {
+            errorMessage = VitesseRHError.validation(.invalidName).localizedDescription
+            return false
+        }
+        guard !email.isEmpty else {
+            errorMessage = VitesseRHError.validation(.emptyEmail).localizedDescription
+            return false
+        }
+        guard email.isValidEmail() else {
+            errorMessage = VitesseRHError.validation(.invalidEmail).localizedDescription
+            return false
+        }
+        if !phone.isEmpty, !phone.isValidFrPhone() {
+            errorMessage = VitesseRHError.validation(.invalidPhone).localizedDescription
+            return false
+        }
+        if !linkedinURL.isEmpty, URL(string: linkedinURL) == nil {
+            errorMessage = VitesseRHError.validation(.invalidLinkedInURL).localizedDescription
+            return false
+        }
+        
+        return true
     }
 }

@@ -7,79 +7,70 @@
 
 import Foundation
 
-@MainActor
-class RegisterViewModel: ObservableObject {
-    
+final class RegisterViewModel: ObservableObject {
+    @Published var email: String = ""
     @Published var firstName: String = ""
     @Published var lastName: String = ""
-    @Published var email: String = ""
     @Published var password: String = ""
-    @Published var confirmPassword: String = ""
+    @Published var confirmPwd: String = ""
     
-    @Published var registrationMessage: String? = nil
-    @Published var isRegistered: Bool = false
-    
-    private let service: VitesseRHService
-    
-    init(service: VitesseRHService = VitesseRHService()) {
-        self.service = service
-    }
+    @Published var isRegistered = false
+    @Published var inProgress = false
+    @Published var errorMessage: VitesseRHError? = nil
     
     func register() {
-        guard !firstName.isEmpty, !lastName.isEmpty else {
-            self.registrationMessage = VitesseRHError.invalidName.localizedDescription
-            return
-        }
-        
-        guard isEmailValid(email) else {
-            self.registrationMessage = VitesseRHError.invalidEmail.localizedDescription
-            return
-        }
-        
-        guard isPasswordValid(password) else {
-            self.registrationMessage = VitesseRHError.invalidPassword.localizedDescription
-            return
-        }
-        
-        guard password == confirmPassword else {
-            self.registrationMessage = VitesseRHError.passwordMismatch.localizedDescription
-            return
-        }
-        
+        guard textfieldsAreValid() else { return }
+        inProgress = true
         Task {
-            do {
-                try await service.register(firstName: firstName, lastName: lastName, email: email, password: password)
-                DispatchQueue.main.async {
-                    self.isRegistered = true
-                    self.registrationMessage = "Account created successfully."
-                }
-            } catch let error as VitesseRHError {
-                DispatchQueue.main.async {
-                    self.registrationMessage = error.localizedDescription
-                }
-            } catch let error as URLError {
-                if error.code == .notConnectedToInternet {
-                    self.registrationMessage = VitesseRHError.networkError.localizedDescription
-                } else if error.code == .timedOut {
-                    self.registrationMessage = VitesseRHError.timeout.localizedDescription
-                } else {
-                    self.registrationMessage = VitesseRHError.unknown.localizedDescription
-                }
-            } catch {
-                DispatchQueue.main.async {
-                    self.registrationMessage = VitesseRHError.unknown.localizedDescription
-                }
-            }
+            let result = await VitesseRHService().register(mail: email, password: password, firstName: firstName, lastName: lastName)
+            await processResult(result)
         }
     }
     
-    private func isEmailValid(_ email: String) -> Bool {
-        let emailRegex = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
-        return NSPredicate(format: "SELF MATCHES %@", emailRegex).evaluate(with: email)
+    private func processResult(_ result: Result<Bool, VitesseRHError>) async {
+        await MainActor.run {
+            switch result {
+            case .success:
+                self.errorMessage = nil
+                self.isRegistered = true
+            case .failure(let error):
+                self.errorMessage = error
+            }
+            self.inProgress = false
+        }
     }
     
-    private func isPasswordValid(_ password: String) -> Bool {
-        return password.count >= 6
+    private func textfieldsAreValid() -> Bool {
+        errorMessage = nil
+        
+        guard !firstName.isEmpty || !lastName.isEmpty else {
+            errorMessage = .validation(.invalidName)
+            return false
+        }
+        
+        guard !email.isEmpty  else {
+            errorMessage = .validation(.emptyEmail)
+            return false
+        }
+        
+        guard !password.isEmpty else {
+            errorMessage = .validation(.emptyPassword)
+            return false
+        }
+        
+//        guard !confirmPwd.isEmpty else {
+//            errorMessage = .validation(.passwordMismatch)
+//            return false
+//        }
+        
+        guard email.isValidEmail() else {
+            errorMessage = .validation(.invalidEmail)
+            return false
+        }
+        guard  password == confirmPwd else {
+            errorMessage = .validation(.passwordMismatch)
+            return false
+        }
+        return true
     }
 }
-

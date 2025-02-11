@@ -8,95 +8,85 @@
 import SwiftUI
 
 struct LoginView: View {
-    @StateObject private var viewModel = LoginViewModel()
-
+    @ObservedObject var viewModel: LoginViewModel
+    
     var body: some View {
         NavigationView {
             GeometryReader { geometry in
                 VStack {
                     LogoView()
-                    
                     Text("Login")
                         .font(.largeTitle)
                         .padding(.top, 20)
-                    
                     Spacer()
-                    
                     VStack(alignment: .leading, spacing: 15) {
-                        Text("Email")
-                            .font(.headline)
-                        TextField("", text: $viewModel.email)
-                            .autocorrectionDisabled(true)
-                            .keyboardType(.emailAddress)
-                            .textInputAutocapitalization(.never)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                        
-                        Text("Password")
-                            .font(.headline)
-                        SecureField("", text: $viewModel.password)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                        Group {
+                            Text("Email")
+                                .font(.headline)
+                            TextField("Email", text: $viewModel.email)
+                                .autocorrectionDisabled(true)
+                                .keyboardType(.emailAddress)
+                                .textInputAutocapitalization(.never)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                            if !viewModel.email.isValidEmail() && !viewModel.email.isEmpty {
+                                Text("Invalid email address")
+                                    .foregroundColor(.red)
+                                    .font(.footnote)
+                            }
+                        }
+                        Group {
+                            Text("Password")
+                                .font(.headline)
+                            SecureField("Password", text: $viewModel.password)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                            if !viewModel.password.isEmpty && viewModel.password.count < 6 {
+                                Text("Password must be at least 6 characters")
+                                    .foregroundColor(.red)
+                                    .font(.footnote)
+                            }
+                        }
                     }
                     .padding(.horizontal)
-                    
                     Spacer()
-                    
-                    Button(action: {
-                        viewModel.login()
-                    }) {
+                    Button(action: { viewModel.signIn() }) {
                         HStack {
                             Spacer()
-                            Text("Sign in")
-                                .padding()
+                            Text("Sign in").padding()
                             Spacer()
                         }
                     }
-                    .frame(maxWidth: geometry.size.width * 0.4)
+                    .frame(maxWidth: geometry.size.width * 0.6)
                     .background(Color.black)
                     .foregroundColor(.white)
                     .cornerRadius(10)
-                    .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
-                    
-                    if let loginMessage = viewModel.loginMessage {
-                        Text(loginMessage)
+                    .shadow(radius: 5)
+                    .padding(.bottom, 10)
+                    if !viewModel.errorMessage.isEmpty {
+                        Text(viewModel.errorMessage)
                             .foregroundColor(.red)
                             .padding(.top, 10)
                     }
-                    
-                    if viewModel.isAuthenticated {
-                        NavigationLink(destination: CandidateListView(token: viewModel.token ?? ""), isActive: $viewModel.isAuthenticated) {
-                            EmptyView()
-                        }
-                    }
-                    
                     NavigationLink(destination: RegisterView()) {
                         HStack {
                             Spacer()
-                            Text("Register")
-                                .padding()
+                            Text("Register").padding()
                             Spacer()
                         }
                     }
-                    .frame(maxWidth: geometry.size.width * 0.4)
+                    .frame(maxWidth: geometry.size.width * 0.6)
                     .background(Color.gray)
                     .foregroundColor(.black)
                     .cornerRadius(10)
-                    .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
-                    .padding(.top, 10)
-                    
+                    .shadow(radius: 5)
                     Spacer()
                 }
                 .padding()
-                .background(
-                    LinearGradient(gradient: Gradient(colors: [Color.blue.opacity(0.2), Color.gray]), startPoint: .bottom, endPoint: .top)
-                        .ignoresSafeArea()
-                )
-                .onTapGesture {
-                    UIApplication.shared.endEditing()
-                }
+                .background(LinearGradient(gradient: Gradient(colors: [Color.blue.opacity(0.2), Color.gray]), startPoint: .bottom, endPoint: .top).ignoresSafeArea())
+                .onTapGesture { UIApplication.shared.endEditing() }
             }
         }
         .navigationViewStyle(StackNavigationViewStyle())
-        .animation(.easeInOut, value: viewModel.isAuthenticated)
     }
 }
+
 

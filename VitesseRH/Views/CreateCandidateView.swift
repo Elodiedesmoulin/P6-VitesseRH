@@ -8,87 +8,69 @@
 import SwiftUI
 
 struct CreateCandidateView: View {
-    @State private var firstName = ""
-    @State private var lastName = ""
-    @State private var email = ""
-    @State private var phone = ""
-    @State private var linkedin = ""
-    @State private var note = ""
-
-    
-    @ObservedObject var viewModel: CreateCandidateViewModel
-    var token: String
+    @StateObject var viewModel = CreateCandidateViewModel()
+    @Environment(\.presentationMode) private var presentationMode
     
     var body: some View {
-        VStack {
-            TextField("First Name", text: $firstName)
-                .autocorrectionDisabled(true)
-                .padding()
+        VStack(spacing: 30) {
+            TextField("First Name", text: $viewModel.firstName)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
+                .padding(.horizontal)
             
-            TextField("Last Name", text: $lastName)
-                .autocorrectionDisabled(true)
-                .padding()
+            TextField("Last Name", text: $viewModel.lastName)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
+                .padding(.horizontal)
             
-            TextField("Email", text: $email)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled(true)
-                .padding()
+            TextField("Email", text: $viewModel.email)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
-            
-            TextField("Phone", text: $phone)
-                .padding()
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-            
-            TextField("Linkedin", text: $linkedin)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled(true)
-                .padding()
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-            
-            TextField("Note", text: $note)
-                .padding()
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-            
-            Button(action: {
-                let newCandidate = Candidate(
-                    id: "",
-                    firstName: firstName,
-                    lastName: lastName,
-                    email: email,
-                    phone: phone,
-                    note: nil,
-                    linkedinURL: nil,
-                    isFavorite: false
-                )
-                viewModel.addCandidate(candidate: newCandidate)
-            }) {
-                HStack {
-                    Spacer()
-                    Text("Save")
-                        .font(.headline)
-                        .padding()
-                    Spacer()
-                }
-            }
-            .background(Color.black)
-            .foregroundColor(.white)
-            .cornerRadius(8)
-            .shadow(color: Color.gray.opacity(0.4), radius: 5, x: 0, y: 5)
-            .padding()
+                .padding(.horizontal)
+                .autocapitalization(.none)
 
             
-            if let errorMessage = viewModel.errorMessage {
-                            Text(errorMessage)
-                                .foregroundColor(.red)
-                                .padding()
+            TextField("Phone", text: $viewModel.phone)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .padding(.horizontal)
+            
+            TextField("LinkedIn URL", text: $viewModel.linkedinURL)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .padding(.horizontal)
+                .autocapitalization(.none)
+
+            
+            TextField("Note", text: $viewModel.note)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .padding(.horizontal)
+            
+            if !viewModel.errorMessage.isEmpty {
+                Text(viewModel.errorMessage)
+                    .foregroundColor(.red)
+                    .padding(.horizontal)
+            }
+            
+            Button(action: {
+                viewModel.addCandidate()
+            }) {
+                Text("Add Candidate")
+                    .font(.headline)
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(Color.black)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+            }
+            .padding(.horizontal)
+            .disabled(viewModel.addInProgress)
+            
+            if viewModel.addInProgress {
+                ProgressView()
+                    .padding()
             }
         }
         .padding()
-        .contentShape(Rectangle())
-        .onTapGesture {
-            UIApplication.shared.endEditing()
+        .onChange(of: viewModel.dismissView) { dismiss in
+            if dismiss {
+                presentationMode.wrappedValue.dismiss()
+            }
         }
     }
 }

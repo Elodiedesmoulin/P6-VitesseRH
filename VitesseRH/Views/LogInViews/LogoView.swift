@@ -8,9 +8,6 @@
 import SwiftUI
 
 struct LogoView: View {
-    @State var width: CGFloat = 335
-    @State var height: CGFloat = 100
-    
     var body: some View {
         Image("Logo")
             .resizable()

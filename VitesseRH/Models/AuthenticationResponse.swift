@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct AuthenticationResponse: Decodable {
+struct AuthenticationResponse: Codable {
     let token: String
     let isAdmin: Bool
 }
