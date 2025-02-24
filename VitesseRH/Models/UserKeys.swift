@@ -7,8 +7,7 @@
 
 import Foundation
 
-final class UserConstants {
-
+enum UserKeys {
     static let email = "email"
     static let password = "password"
     static let firstName = "firstName"

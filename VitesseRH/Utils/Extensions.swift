@@ -19,17 +19,17 @@ extension UIApplication {
 
 extension String {
     func isValidEmail() -> Bool {
-        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}")
-        return emailPredicate.evaluate(with: self)
+        let regex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+        return NSPredicate(format: "SELF MATCHES %@", regex).evaluate(with: self)
     }
     
     func isValidFrPhone() -> Bool {
-        let phonePredicate = NSPredicate(format: "SELF MATCHES %@", "^(0\\d(?:[\\s.-]?\\d{2}){4}|0\\d{9})$")
-        return phonePredicate.evaluate(with: self)
+        let regex = "^(0\\d(?:[\\s.-]?\\d{2}){4}|0\\d{9})$"
+        return NSPredicate(format: "SELF MATCHES %@", regex).evaluate(with: self)
     }
     
     func formattedFRPhone() -> String {
-        let digits = self.filter { $0.isNumber }
+        let digits = filter { $0.isNumber }
         let groups = stride(from: 0, to: digits.count, by: 2).map { index -> String in
             let start = digits.index(digits.startIndex, offsetBy: index)
             let end = digits.index(start, offsetBy: 2, limitedBy: digits.endIndex) ?? digits.endIndex
@@ -39,10 +39,9 @@ extension String {
     }
     
     mutating func applyFrPhonePattern() {
-        self = self.formattedFRPhone()
+        self = formattedFRPhone()
     }
 }
-
 
 extension Notification.Name {
     static let needUpdate = Notification.Name("NeedUpdate")

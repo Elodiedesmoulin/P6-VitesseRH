@@ -9,13 +9,14 @@ import Foundation
 
 @MainActor
 final class EditingViewModel: ObservableObject {
+    private let service: VitesseRHServiceProtocol
+    
     @Published var candidate: Candidate
+    @Published var errorMessage: String?
     var token: String
     var candidateId: String
-    var service: VitesseRHService
-    @Published var errorMessage: String? = nil
     
-    init(candidate: Candidate, token: String, candidateId: String, service: VitesseRHService) {
+    init(candidate: Candidate, token: String, candidateId: String, service: VitesseRHServiceProtocol = VitesseRHService()) {
         self.candidate = candidate
         self.token = token
         self.candidateId = candidateId
@@ -26,27 +27,25 @@ final class EditingViewModel: ObservableObject {
         errorMessage = nil
         
         guard candidate.email.isValidEmail() else {
-            self.errorMessage = "Invalid email format."
+            errorMessage = VitesseRHError.validation(.invalidEmail).localizedDescription
             return
         }
         if !candidate.phone.isEmpty && !candidate.phone.isValidFrPhone() {
-            self.errorMessage = "Invalid phone number format."
+            errorMessage = VitesseRHError.validation(.invalidPhone).localizedDescription
             return
         }
-        candidate.phone.applyFrPhonePattern()
-        if let linkedinURL = candidate.linkedinURL, !linkedinURL.isEmpty, URL(string: linkedinURL) == nil {
-            self.errorMessage = "Invalid LinkedIn URL."
+        if let url = candidate.linkedinURL, !url.isEmpty, URL(string: url)?.scheme == nil {
+            errorMessage = VitesseRHError.validation(.invalidLinkedInURL).localizedDescription
             return
         }
         
         let result = await service.updateCandidate(candidate: candidate)
-        await MainActor.run {
-            switch result {
-            case .success(let updatedCandidate):
-                self.candidate = updatedCandidate
-            case .failure(let error):
-                self.errorMessage = error.localizedDescription
-            }
+        switch result {
+        case .success(let updatedCandidate):
+            candidate = updatedCandidate
+        case .failure(let error):
+            errorMessage = error.localizedDescription
         }
     }
 }
+

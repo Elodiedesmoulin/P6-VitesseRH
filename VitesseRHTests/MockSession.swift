@@ -11,15 +11,20 @@ import XCTest
 @testable import VitesseRH
 
 class MockSession: SessionProtocol {
-    var data: Data?
-    var urlResponse: URLResponse?
-    var error: Error?
+    var dataTaskHandler: ((URLRequest, URLSessionTaskDelegate?) async throws -> (Data, URLResponse))?
     
-    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
-        if let error = error { throw error }
-        guard let data = data, let urlResponse = urlResponse else {
-            throw NSError(domain: "MockSession", code: 0, userInfo: nil)
+    func data(for request: URLRequest, delegate: URLSessionTaskDelegate?) async throws -> (Data, URLResponse) {
+        if let handler = dataTaskHandler {
+            return try await handler(request, delegate)
         }
-        return (data, urlResponse)
+        throw NSError(domain: "MockSession", code: 0, userInfo: [NSLocalizedDescriptionKey: "No handler defined"])
+    }
+}
+
+class MockAuthenticationService: AuthenticationServiceProtocol {
+    var logInResult: Result<AuthenticationResponse, VitesseRHError>?
+    
+    func logIn(withEmail email: String, andPassword password: String) async -> Result<AuthenticationResponse, VitesseRHError> {
+        return logInResult!
     }
 }

@@ -7,24 +7,23 @@
 
 import Foundation
 
-class AuthenticationManager {
+final class AuthenticationManager {
     static let shared = AuthenticationManager()
     private var token: String?
-    private var isUserAdmin = false
+    private var isAdminUser = false
     
     private init() {}
     
     func saveAuthData(_ response: AuthenticationResponse) {
         token = response.token
-        isUserAdmin = response.isAdmin
+        isAdminUser = response.isAdmin
     }
     
     func getToken() -> String? { token }
-    
-    func isAdmin() -> Bool { isUserAdmin }
+    func isAdmin() -> Bool { isAdminUser }
     
     func deleteAuthData() {
         token = nil
-        isUserAdmin = false
+        isAdminUser = false
     }
 }

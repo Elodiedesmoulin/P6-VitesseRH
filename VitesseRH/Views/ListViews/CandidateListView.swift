@@ -8,7 +8,9 @@
 import SwiftUI
 
 struct CandidateListView: View {
-    @StateObject private var viewModel = CandidateListViewModel(onSignOut: { })
+    @StateObject private var viewModel = CandidateListViewModel(onSignOut: {
+        AuthenticationManager.shared.deleteAuthData()
+    })
     @State private var showingCreateCandidate = false
     
     var body: some View {
@@ -38,12 +40,19 @@ struct CandidateListView: View {
                 viewModel.getCandidates()
             }
             .navigationTitle("Candidates")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Logout") {
+                        viewModel.signOut()
+                    }
+                }
+            }
         }
     }
     
     private func headerView() -> some View {
         HStack(spacing: 15) {
-            Button(action: { viewModel.editModeToggle() }) {
+            Button(action: { viewModel.toggleEditMode() }) {
                 Label(
                     viewModel.inEditMode ? "Return" : "Edit",
                     systemImage: viewModel.inEditMode ? "arrow.uturn.backward.circle.fill" : "pencil.circle.fill"
@@ -122,8 +131,7 @@ struct CandidateListView: View {
                                 candidate: candidate,
                                 isInEditMode: viewModel.inEditMode,
                                 isSelected: viewModel.selection.contains(candidate.id),
-                                toggleSelection: {
-                                }
+                                toggleSelection: { }
                             )
                         }
                     }
@@ -132,7 +140,6 @@ struct CandidateListView: View {
         }
         .listStyle(PlainListStyle())
     }
-    
     
     private func createCandidateButton() -> some View {
         Button(action: {

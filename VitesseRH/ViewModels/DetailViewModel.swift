@@ -9,35 +9,35 @@ import Foundation
 import SwiftUI
 
 final class DetailViewModel: ObservableObject {
-    let service: VitesseRHService
+    let service: VitesseRHServiceProtocol
     @Published var candidate: Candidate
-    @Published var errorMessage: String? = nil
+    @Published var errorMessage: String?
+    
     var token: String
     var isAdmin: Bool
-
-    init(service: VitesseRHService, token: String, candidate: Candidate, isAdmin: Bool) {
-        self.service = service
+    
+    init(token: String, candidate: Candidate, isAdmin: Bool, service: VitesseRHServiceProtocol = VitesseRHService()) {
         self.token = token
         self.candidate = candidate
         self.isAdmin = isAdmin
+        self.service = service
     }
-
+    
     func toggleFavorite() {
-           candidate.isFavorite.toggle()
-                      Task {
-               let result = await service.favoriteToggle(forId: candidate.id)
-               await MainActor.run {
-                   switch result {
-                   case .success(let updatedCandidate):
-                       self.candidate = updatedCandidate
-                   case .failure(let error):
-                       self.candidate.isFavorite.toggle()
-                       self.errorMessage = error.localizedDescription
-                   }
-               }
-           }
-       }
-   
+        candidate.isFavorite.toggle()
+        Task {
+            let result = await service.favoriteToggle(forId: candidate.id)
+            await MainActor.run {
+                switch result {
+                case .success(let updatedCandidate):
+                    self.candidate = updatedCandidate
+                case .failure(let error):
+                    self.candidate.isFavorite.toggle() // annule le changement
+                    self.errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
     
     func fetchCandidateDetails() {
         Task {

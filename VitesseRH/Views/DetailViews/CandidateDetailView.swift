@@ -16,7 +16,7 @@ struct CandidateDetailView: View {
 
     init(candidate: Binding<Candidate>, token: String, isAdmin: Bool) {
         _candidate = candidate
-        _viewModel = StateObject(wrappedValue: DetailViewModel(service: VitesseRHService(), token: token, candidate: candidate.wrappedValue, isAdmin: isAdmin))
+        _viewModel = StateObject(wrappedValue: DetailViewModel(token: token, candidate: candidate.wrappedValue, isAdmin: isAdmin, service: VitesseRHService()))
         self.token = token
         self.isAdmin = isAdmin
     }

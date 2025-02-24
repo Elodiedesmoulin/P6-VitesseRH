@@ -8,27 +8,30 @@
 import Foundation
 
 final class CreateCandidateViewModel: ObservableObject {
-    private let service = VitesseRHService()
+    private let service: VitesseRHServiceProtocol
+    @Published var firstName = ""
+    @Published var lastName = ""
+    @Published var email = ""
+    @Published var phone = ""
+    @Published var linkedinURL = ""
+    @Published var note = ""
     
-    @Published var firstName: String = ""
-    @Published var lastName: String = ""
-    @Published var email: String = ""
-    @Published var phone: String = ""
-    @Published var linkedinURL: String = ""
-    @Published var note: String = ""
-    
-    @Published private(set) var addInProgress = false
+    @Published private(set) var isAdding = false
     @Published private(set) var dismissView = false
     @Published private(set) var errorMessage = ""
     
-    var detailsHaveBeenEdited: Bool {
+    var isEdited: Bool {
         ![firstName, lastName, email, linkedinURL, phone, note].allSatisfy { $0.isEmpty }
     }
     
+    init(service: VitesseRHServiceProtocol = VitesseRHService()) {
+        self.service = service
+    }
+    
     func addCandidate() {
-        guard textfieldsAreValid() else { return }
-        addInProgress = true
-        let newCandidate = Candidate(
+        guard areTextFieldsValid() else { return }
+        isAdding = true
+        let candidate = Candidate(
             id: "",
             firstName: firstName,
             lastName: lastName,
@@ -39,46 +42,45 @@ final class CreateCandidateViewModel: ObservableObject {
             isFavorite: false
         )
         Task {
-            let result = await service.addCandidate(candidate: newCandidate)
-            await processResult(result)
+            let result = await service.addCandidate(candidate: candidate)
+            await handleResult(result)
         }
     }
     
-    private func processResult(_ result: Result<Candidate, VitesseRHError>) async {
+    private func handleResult(_ result: Result<Candidate, VitesseRHError>) async {
         await MainActor.run {
             switch result {
             case .success:
                 NotificationCenter.default.post(name: .needUpdate, object: nil)
-                self.dismissView = true
+                dismissView = true
             case .failure(let error):
-                self.errorMessage = "\(error.title) \(error.localizedDescription)"
+                errorMessage = "\(error.title) \(error.localizedDescription)"
             }
-            self.addInProgress = false
+            isAdding = false
         }
     }
     
-    private func textfieldsAreValid() -> Bool {
-        guard !firstName.isEmpty, !lastName.isEmpty else {
+    private func areTextFieldsValid() -> Bool {
+        if firstName.isEmpty || lastName.isEmpty {
             errorMessage = VitesseRHError.validation(.invalidName).localizedDescription
             return false
         }
-        guard !email.isEmpty else {
+        if email.isEmpty {
             errorMessage = VitesseRHError.validation(.emptyEmail).localizedDescription
             return false
         }
-        guard email.isValidEmail() else {
+        if !email.isValidEmail() {
             errorMessage = VitesseRHError.validation(.invalidEmail).localizedDescription
             return false
         }
-        if !phone.isEmpty, !phone.isValidFrPhone() {
+        if !phone.isEmpty && !phone.isValidFrPhone() {
             errorMessage = VitesseRHError.validation(.invalidPhone).localizedDescription
             return false
         }
-        if !linkedinURL.isEmpty, URL(string: linkedinURL) == nil {
+        if !linkedinURL.isEmpty, URL(string: linkedinURL)?.scheme == nil {
             errorMessage = VitesseRHError.validation(.invalidLinkedInURL).localizedDescription
             return false
         }
-        
         return true
     }
 }

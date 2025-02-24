@@ -8,21 +8,21 @@
 import Foundation
 
 final class VitesseRHAppViewModel: ObservableObject {
-    @Published private(set) var isLogged: Bool = AuthenticationManager.shared.getToken() != nil
+    @Published private(set) var isLoggedIn = AuthenticationManager.shared.getToken() != nil
     
-    var loginVM: LoginViewModel {
-        LoginViewModel {
+    var loginViewModel: LoginViewModel {
+        LoginViewModel(authService: VitesseRHService(), onLoginSuccess: {
             Task { @MainActor in
-                self.isLogged = true
+                self.isLoggedIn = true
             }
-        }
+        })
     }
     
-    var candidatesVM: CandidateListViewModel {
+    var candidateListViewModel: CandidateListViewModel {
         CandidateListViewModel(onSignOut: {
             AuthenticationManager.shared.deleteAuthData()
             Task { @MainActor in
-                self.isLogged = false
+                self.isLoggedIn = false
             }
         })
     }

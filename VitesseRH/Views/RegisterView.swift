@@ -30,7 +30,7 @@ struct RegisterView: View {
                 .padding()
                 .autocapitalization(.none)
 
-            SecureField("Confirm Password", text: $viewModel.confirmPwd)
+            SecureField("Confirm Password", text: $viewModel.confirmPassword)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
                 .autocapitalization(.none)

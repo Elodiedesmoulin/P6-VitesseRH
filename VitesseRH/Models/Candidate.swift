@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Candidate: Codable, Identifiable, Hashable {
+struct Candidate: Codable, Identifiable, Hashable, Equatable {
     var id: String
     var firstName: String
     var lastName: String
@@ -16,4 +16,17 @@ struct Candidate: Codable, Identifiable, Hashable {
     var note: String?
     var linkedinURL: String?
     var isFavorite: Bool
+}
+
+extension Candidate {
+    var parameters: [String: AnyHashable] {
+        [
+            "email": email,
+            "note": note ?? "",
+            "linkedinURL": linkedinURL ?? "",
+            "firstName": firstName,
+            "lastName": lastName,
+            "phone": phone
+        ]
+    }
 }

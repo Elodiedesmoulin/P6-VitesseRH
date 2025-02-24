@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import Combine
 
 enum EditingMode {
     case inactive, active
@@ -14,7 +13,7 @@ enum EditingMode {
 
 final class CandidateListViewModel: ObservableObject {
     private let onSignOut: () -> Void
-    private let service = VitesseRHService()
+    private let service: VitesseRHServiceProtocol
     
     @Published private(set) var allCandidates: [Candidate] = [] {
         didSet { applyFilter() }
@@ -31,13 +30,19 @@ final class CandidateListViewModel: ObservableObject {
     var isAdmin: Bool { AuthenticationManager.shared.isAdmin() }
     var inEditMode: Bool { editMode == .active }
     
-    init(onSignOut: @escaping () -> Void) {
+    init(onSignOut: @escaping () -> Void,
+         service: VitesseRHServiceProtocol = VitesseRHService(),
+         autoFetch: Bool = true) {
         self.onSignOut = onSignOut
-        getCandidates()
-        NotificationCenter.default.addObserver(self, selector: #selector(needUpdate), name: .needUpdate, object: nil)
+        self.service = service
+        if autoFetch { getCandidates() }
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(getCandidates),
+                                               name: .needUpdate,
+                                               object: nil)
     }
     
-    func getCandidates() {
+    @objc func getCandidates() {
         guard !inProgress else { return }
         inProgress = true
         Task {
@@ -55,7 +60,7 @@ final class CandidateListViewModel: ObservableObject {
         }
     }
     
-    func editModeToggle() {
+    func toggleEditMode() {
         editMode = (editMode == .active) ? .inactive : .active
         if editMode == .inactive { selection.removeAll() }
     }
@@ -107,17 +112,13 @@ final class CandidateListViewModel: ObservableObject {
     }
     
     private func applyFilter() {
-        let searchLowercased = filter.search.lowercased()
-        candidates = allCandidates.filter {
-            let matchesFavorites = filter.favorites ? $0.isFavorite : true
-            let matchesSearch = searchLowercased.isEmpty ||
-                $0.firstName.lowercased().contains(searchLowercased) ||
-                $0.lastName.lowercased().contains(searchLowercased)
+        let searchQuery = filter.search.lowercased()
+        candidates = allCandidates.filter { candidate in
+            let matchesFavorites = filter.favorites ? candidate.isFavorite : true
+            let matchesSearch = searchQuery.isEmpty ||
+                candidate.firstName.lowercased().contains(searchQuery) ||
+                candidate.lastName.lowercased().contains(searchQuery)
             return matchesFavorites && matchesSearch
         }
-    }
-    
-    @objc private func needUpdate() {
-        getCandidates()
     }
 }

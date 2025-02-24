@@ -59,9 +59,9 @@ struct CreateCandidateView: View {
                     .cornerRadius(10)
             }
             .padding(.horizontal)
-            .disabled(viewModel.addInProgress)
+            .disabled(viewModel.isAdding)
             
-            if viewModel.addInProgress {
+            if viewModel.isAdding {
                 ProgressView()
                     .padding()
             }

@@ -1,55 +1,53 @@
 //
-//  FakeResponseData.swift
+//  MockVitesseRHService.swift
 //  VitesseRHTests
 //
-//  Created by Elo on 20/01/2025.
+//  Created by Elo on 17/02/2025.
 //
 
-
-import Foundation
 import XCTest
-
 @testable import VitesseRH
 
-class MockVitesseRHService: VitesseRHService {
-    var getCandidatesResult: Result<[Candidate], VitesseRHError>?
-    var getCandidateResult: Result<Candidate, VitesseRHError>?
-    var addCandidateResult: Result<Candidate, VitesseRHError>?
-    var updateCandidateResult: Result<Candidate, VitesseRHError>?
-    var favoriteToggleResult: Result<Candidate, VitesseRHError>?
-    var deleteCandidateResult: Result<Bool, VitesseRHError>?
-    var logInResult: Result<AuthenticationResponse, VitesseRHError>?
-    var registerResult: Result<Bool, VitesseRHError>?
+class MockVitesseRHService: VitesseRHServiceProtocol {
     
-    override func getCandidates() async -> Result<[Candidate], VitesseRHError> {
-        return getCandidatesResult ?? .failure(.unknown)
+    var getCandidatesResult: Result<[Candidate], VitesseRHError> = .failure(.unknown)
+    var getCandidateResult: Result<Candidate, VitesseRHError> = .failure(.unknown)
+    var addCandidateResult: Result<Candidate, VitesseRHError> = .failure(.unknown)
+    var updateCandidateResult: Result<Candidate, VitesseRHError> = .failure(.unknown)
+    var favoriteToggleResult: Result<Candidate, VitesseRHError> = .failure(.unknown)
+    var deleteCandidateResult: Result<Bool, VitesseRHError> = .failure(.unknown)
+    var registerResult: Result<Bool, VitesseRHError> = .failure(.unknown)
+    var logInResult: Result<AuthenticationResponse, VitesseRHError> = .failure(.unknown)
+    
+    func getCandidates() async -> Result<[Candidate], VitesseRHError> {
+        return getCandidatesResult
     }
     
-    override func getCandidate(withId candidateId: String) async -> Result<Candidate, VitesseRHError> {
-        return getCandidateResult ?? .failure(.unknown)
+    func getCandidate(withId candidateId: String) async -> Result<Candidate, VitesseRHError> {
+        return getCandidateResult
     }
     
-    override func addCandidate(candidate: Candidate) async -> Result<Candidate, VitesseRHError> {
-        return addCandidateResult ?? .failure(.unknown)
+    func addCandidate(candidate: Candidate) async -> Result<Candidate, VitesseRHError> {
+        return addCandidateResult
     }
     
-    override func updateCandidate(candidate: Candidate) async -> Result<Candidate, VitesseRHError> {
-        return updateCandidateResult ?? .failure(.unknown)
+    func updateCandidate(candidate: Candidate) async -> Result<Candidate, VitesseRHError> {
+        return updateCandidateResult
     }
     
-    override func favoriteToggle(forId candidateId: String) async -> Result<Candidate, VitesseRHError> {
-        return favoriteToggleResult ?? .failure(.unknown)
+    func favoriteToggle(forId candidateId: String) async -> Result<Candidate, VitesseRHError> {
+        return favoriteToggleResult
     }
     
-    override func deleteCandidate(withId candidateId: String) async -> Result<Bool, VitesseRHError> {
-        return deleteCandidateResult ?? .failure(.unknown)
+    func deleteCandidate(withId candidateId: String) async -> Result<Bool, VitesseRHError> {
+        return deleteCandidateResult
     }
     
-    override func logIn(withEmail email: String, andPassword password: String) async -> Result<AuthenticationResponse, VitesseRHError> {
-        return logInResult ?? .failure(.unknown)
+    func register(mail: String, password: String, firstName: String, lastName: String) async -> Result<Bool, VitesseRHError> {
+        return registerResult
     }
     
-    override func register(mail: String, password: String, firstName: String, lastName: String) async -> Result<Bool, VitesseRHError> {
-        return registerResult ?? .failure(.unknown)
+    func logIn(withEmail email: String, andPassword password: String) async -> Result<AuthenticationResponse, VitesseRHError> {
+        return logInResult
     }
 }
