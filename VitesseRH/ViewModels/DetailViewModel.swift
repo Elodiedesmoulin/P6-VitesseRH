@@ -10,15 +10,14 @@ import SwiftUI
 
 final class DetailViewModel: ObservableObject {
     let service: VitesseRHServiceProtocol
-    @Published var candidate: Candidate
+    @Binding var candidate: Candidate
     @Published var errorMessage: String?
-    
     var token: String
     var isAdmin: Bool
-    
-    init(token: String, candidate: Candidate, isAdmin: Bool, service: VitesseRHServiceProtocol = VitesseRHService()) {
+
+    init(candidate: Binding<Candidate>, token: String, isAdmin: Bool, service: VitesseRHServiceProtocol = VitesseRHService()) {
+        self._candidate = candidate
         self.token = token
-        self.candidate = candidate
         self.isAdmin = isAdmin
         self.service = service
     }
@@ -30,10 +29,10 @@ final class DetailViewModel: ObservableObject {
             await MainActor.run {
                 switch result {
                 case .success(let updatedCandidate):
-                    self.candidate = updatedCandidate
+                    candidate = updatedCandidate
                 case .failure(let error):
-                    self.candidate.isFavorite.toggle() // annule le changement
-                    self.errorMessage = error.localizedDescription
+                    candidate.isFavorite.toggle()
+                    errorMessage = error.localizedDescription
                 }
             }
         }
@@ -45,9 +44,9 @@ final class DetailViewModel: ObservableObject {
             await MainActor.run {
                 switch result {
                 case .success(let updatedCandidate):
-                    self.candidate = updatedCandidate
+                    candidate = updatedCandidate
                 case .failure(let error):
-                    self.errorMessage = error.localizedDescription
+                    errorMessage = error.localizedDescription
                 }
             }
         }

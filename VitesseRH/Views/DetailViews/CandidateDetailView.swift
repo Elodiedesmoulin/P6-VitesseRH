@@ -16,7 +16,7 @@ struct CandidateDetailView: View {
 
     init(candidate: Binding<Candidate>, token: String, isAdmin: Bool) {
         _candidate = candidate
-        _viewModel = StateObject(wrappedValue: DetailViewModel(token: token, candidate: candidate.wrappedValue, isAdmin: isAdmin, service: VitesseRHService()))
+        _viewModel = StateObject(wrappedValue: DetailViewModel(candidate: candidate, token: token, isAdmin: isAdmin, service: VitesseRHService()))
         self.token = token
         self.isAdmin = isAdmin
     }
@@ -28,7 +28,7 @@ struct CandidateDetailView: View {
                     CandidateDetailHeader(candidate: $candidate, toggleFavorite: {
                         viewModel.toggleFavorite()
                     }, isAdmin: isAdmin)
-                    .padding(.bottom, 20)  
+                    .padding(.bottom, 20)
                     
                     CandidateDetailInfo(candidate: candidate)
                     
@@ -50,7 +50,7 @@ struct CandidateDetailView: View {
                         viewModel.fetchCandidateDetails()
                     }) {
                         EditingView(
-                            viewModel: EditingViewModel(candidate: candidate, token: viewModel.token, candidateId: candidate.id, service: viewModel.service),
+                            viewModel: EditingViewModel(candidate: $candidate, token: viewModel.token, candidateId: candidate.id, service: viewModel.service),
                             isEditing: $isEditing
                         )
                     }
@@ -66,11 +66,7 @@ struct CandidateDetailView: View {
             .navigationTitle("Candidate Details")
             .navigationBarTitleDisplayMode(.inline)
             .alert(isPresented: .constant(viewModel.errorMessage != nil)) {
-                Alert(
-                    title: Text("Error"),
-                    message: Text(viewModel.errorMessage ?? "An unknown error occurred."),
-                    dismissButton: .default(Text("OK"))
-                )
+                Alert(title: Text("Error"), message: Text(viewModel.errorMessage ?? "An unknown error occurred."), dismissButton: .default(Text("OK")))
             }
         }
     }

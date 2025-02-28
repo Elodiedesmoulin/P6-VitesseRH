@@ -6,18 +6,18 @@
 //
 
 import Foundation
+import SwiftUI
 
 @MainActor
 final class EditingViewModel: ObservableObject {
     private let service: VitesseRHServiceProtocol
-    
-    @Published var candidate: Candidate
+    @Binding var candidate: Candidate
     @Published var errorMessage: String?
     var token: String
     var candidateId: String
-    
-    init(candidate: Candidate, token: String, candidateId: String, service: VitesseRHServiceProtocol = VitesseRHService()) {
-        self.candidate = candidate
+
+    init(candidate: Binding<Candidate>, token: String, candidateId: String, service: VitesseRHServiceProtocol = VitesseRHService()) {
+        self._candidate = candidate
         self.token = token
         self.candidateId = candidateId
         self.service = service
@@ -25,7 +25,6 @@ final class EditingViewModel: ObservableObject {
     
     func saveChanges() async {
         errorMessage = nil
-        
         guard candidate.email.isValidEmail() else {
             errorMessage = VitesseRHError.validation(.invalidEmail).localizedDescription
             return
@@ -38,7 +37,6 @@ final class EditingViewModel: ObservableObject {
             errorMessage = VitesseRHError.validation(.invalidLinkedInURL).localizedDescription
             return
         }
-        
         let result = await service.updateCandidate(candidate: candidate)
         switch result {
         case .success(let updatedCandidate):

@@ -13,18 +13,10 @@ import XCTest
 
 extension XCTestCase {
     
-    func waitUntil<T: AnyObject>(_ object: T, keyPath: KeyPath<T, Bool>, timeout: TimeInterval = 1.0) async {
-            let start = Date()
-            while object[keyPath: keyPath] {
-                if Date().timeIntervalSince(start) > timeout { break }
-                await Task.sleep(50_000_000)
-            }
-        }
-    
     func loadJSONData(filename: String) -> Data? {
             let bundle = Bundle(for: type(of: self))
             guard let url = bundle.url(forResource: filename, withExtension: "json") else {
-                XCTFail("Impossible de trouver \(filename).json")
+                XCTFail("Impossible to find \(filename).json")
                 return nil
             }
             return try? Data(contentsOf: url)

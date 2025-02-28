@@ -8,7 +8,7 @@
 import Foundation
 
 final class VitesseRHAppViewModel: ObservableObject {
-    @Published private(set) var isLoggedIn = AuthenticationManager.shared.getToken() != nil
+    @Published internal(set) var isLoggedIn = AuthenticationManager.shared.getToken() != nil
     
     var loginViewModel: LoginViewModel {
         LoginViewModel(authService: VitesseRHService(), onLoginSuccess: {
