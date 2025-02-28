@@ -10,33 +10,34 @@ import SwiftUI
 
 final class DetailViewModel: ObservableObject {
     let service: VitesseRHServiceProtocol
-    @Binding var candidate: Candidate
-    @Published var errorMessage: String?
+    @Published var candidate: Candidate
+    @Published var errorMessage: String? = nil
     var token: String
     var isAdmin: Bool
 
-    init(candidate: Binding<Candidate>, token: String, isAdmin: Bool, service: VitesseRHServiceProtocol = VitesseRHService()) {
-        self._candidate = candidate
-        self.token = token
-        self.isAdmin = isAdmin
+    init(token: String, candidate: Candidate, isAdmin: Bool, service: VitesseRHServiceProtocol = VitesseRHService()) {
         self.service = service
+        self.token = token
+        self.candidate = candidate
+        self.isAdmin = isAdmin
     }
-    
+
     func toggleFavorite() {
-        candidate.isFavorite.toggle()
-        Task {
-            let result = await service.favoriteToggle(forId: candidate.id)
-            await MainActor.run {
-                switch result {
-                case .success(let updatedCandidate):
-                    candidate = updatedCandidate
-                case .failure(let error):
-                    candidate.isFavorite.toggle()
-                    errorMessage = error.localizedDescription
-                }
-            }
-        }
-    }
+           candidate.isFavorite.toggle()
+                      Task {
+               let result = await service.favoriteToggle(forId: candidate.id)
+               await MainActor.run {
+                   switch result {
+                   case .success(let updatedCandidate):
+                       self.candidate = updatedCandidate
+                   case .failure(let error):
+                       self.candidate.isFavorite.toggle()
+                       self.errorMessage = error.localizedDescription
+                   }
+               }
+           }
+       }
+   
     
     func fetchCandidateDetails() {
         Task {
@@ -44,9 +45,9 @@ final class DetailViewModel: ObservableObject {
             await MainActor.run {
                 switch result {
                 case .success(let updatedCandidate):
-                    candidate = updatedCandidate
+                    self.candidate = updatedCandidate
                 case .failure(let error):
-                    errorMessage = error.localizedDescription
+                    self.errorMessage = error.localizedDescription
                 }
             }
         }

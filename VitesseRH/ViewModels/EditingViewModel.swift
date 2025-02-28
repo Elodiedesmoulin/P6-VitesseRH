@@ -6,18 +6,18 @@
 //
 
 import Foundation
-import SwiftUI
 
 @MainActor
 final class EditingViewModel: ObservableObject {
     private let service: VitesseRHServiceProtocol
-    @Binding var candidate: Candidate
-    @Published var errorMessage: String?
+
+    @Published var candidate: Candidate
     var token: String
     var candidateId: String
-
-    init(candidate: Binding<Candidate>, token: String, candidateId: String, service: VitesseRHServiceProtocol = VitesseRHService()) {
-        self._candidate = candidate
+    @Published var errorMessage: String? = nil
+    
+    init(candidate: Candidate, token: String, candidateId: String, service: VitesseRHServiceProtocol = VitesseRHService()) {
+        self.candidate = candidate
         self.token = token
         self.candidateId = candidateId
         self.service = service
@@ -25,25 +25,28 @@ final class EditingViewModel: ObservableObject {
     
     func saveChanges() async {
         errorMessage = nil
+        
         guard candidate.email.isValidEmail() else {
-            errorMessage = VitesseRHError.validation(.invalidEmail).localizedDescription
+            self.errorMessage = VitesseRHError.validation(.invalidEmail).localizedDescription
             return
         }
         if !candidate.phone.isEmpty && !candidate.phone.isValidFrPhone() {
-            errorMessage = VitesseRHError.validation(.invalidPhone).localizedDescription
+            self.errorMessage = VitesseRHError.validation(.invalidPhone).localizedDescription
             return
         }
-        if let url = candidate.linkedinURL, !url.isEmpty, URL(string: url)?.scheme == nil {
-            errorMessage = VitesseRHError.validation(.invalidLinkedInURL).localizedDescription
+        if let linkedinURL = candidate.linkedinURL, !linkedinURL.isEmpty, URL(string: linkedinURL)?.scheme == nil {
+            self.errorMessage = VitesseRHError.validation(.invalidLinkedInURL).localizedDescription
             return
         }
+        
         let result = await service.updateCandidate(candidate: candidate)
-        switch result {
-        case .success(let updatedCandidate):
-            candidate = updatedCandidate
-        case .failure(let error):
-            errorMessage = error.localizedDescription
+        await MainActor.run {
+            switch result {
+            case .success(let updatedCandidate):
+                self.candidate = updatedCandidate
+            case .failure(let error):
+                self.errorMessage = error.localizedDescription
+            }
         }
     }
 }
-

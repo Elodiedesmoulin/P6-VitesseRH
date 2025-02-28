@@ -6,39 +6,22 @@
 //
 
 import XCTest
-import Combine
 @testable import VitesseRH
 
 @MainActor
 final class EditingViewModelTests: XCTestCase {
     
-    var cancellables: Set<AnyCancellable>!
-    
-    override func setUp() {
-        super.setUp()
-        cancellables = []
-    }
-    
     func testSaveChangesSuccess() async {
-        let updateExpectation = XCTestExpectation(description: #function)
-        
         let candidate = Candidate(id: "1", firstName: "Alice", lastName: "Smith", email: "alice@example.com", phone: "0123456789", note: "Note", linkedinURL: "https://linkedin.com/in/alice", isFavorite: false)
         let mockService = MockVitesseRHService()
         mockService.updateCandidateResult = .success(candidate)
         
         let viewModel = EditingViewModel(candidate: candidate, token: "dummy", candidateId: candidate.id, service: mockService)
-        
-        viewModel.$candidate
-            .dropFirst()
-            .sink { _ in updateExpectation.fulfill() }
-            .store(in: &cancellables)
-        
         viewModel.candidate.email = "alice@example.com"
         viewModel.candidate.phone = "0123456789"
         viewModel.candidate.linkedinURL = "https://linkedin.com/in/alice"
         
         await viewModel.saveChanges()
-        await fulfillment(of: [updateExpectation], timeout: 1)
         
         XCTAssertNil(viewModel.errorMessage)
         XCTAssertEqual(viewModel.candidate.email, "alice@example.com")
