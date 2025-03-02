@@ -6,61 +6,112 @@
 //
 
 import XCTest
+import SwiftUI
 @testable import VitesseRH
 
 @MainActor
 final class EditingViewModelTests: XCTestCase {
     
-    func testSaveChangesSuccess() async {
-        let candidate = Candidate(id: "1", firstName: "Alice", lastName: "Smith", email: "alice@example.com", phone: "0123456789", note: "Note", linkedinURL: "https://linkedin.com/in/alice", isFavorite: false)
+    func candidateFromJSON() throws -> Candidate {
+        guard let data = loadJSONData(filename: "Candidates") else {
+            XCTFail("Impossible de charger Candidates.json")
+            throw NSError(domain: "Candidates", code: 0, userInfo: nil)
+        }
+        let candidates = try JSONDecoder().decode([Candidate].self, from: data)
+        guard let candidate = candidates.first(where: { $0.id == "1" }) else {
+            XCTFail("Aucun candidat avec l'id 1 trouvé dans le JSON")
+            throw NSError(domain: "Candidates", code: 1, userInfo: nil)
+        }
+        return candidate
+    }
+    
+    func testSaveChangesSuccess() async throws {
+        var candidate = try candidateFromJSON()
+        candidate.email = "alice@example.com"
+        candidate.phone = "0123456789"
+        candidate.linkedinURL = "https://linkedin.com/in/alice"
+        
+        let candidateBinding = Binding<Candidate>(
+            get: { candidate },
+            set: { candidate = $0 }
+        )
+        
         let mockService = MockVitesseRHService()
         mockService.updateCandidateResult = .success(candidate)
         
-        let viewModel = EditingViewModel(candidate: candidate, token: "dummy", candidateId: candidate.id, service: mockService)
-        viewModel.candidate.email = "alice@example.com"
-        viewModel.candidate.phone = "0123456789"
-        viewModel.candidate.linkedinURL = "https://linkedin.com/in/alice"
+        let viewModel = EditingViewModel(candidate: candidateBinding, token: "dummy", candidateId: candidate.id, service: mockService)
+        
+        viewModel.$candidate.wrappedValue.email = "alice@example.com"
+        viewModel.$candidate.wrappedValue.phone = "0123456789"
+        viewModel.$candidate.wrappedValue.linkedinURL = "https://linkedin.com/in/alice"
         
         await viewModel.saveChanges()
         
         XCTAssertNil(viewModel.errorMessage)
-        XCTAssertEqual(viewModel.candidate.email, "alice@example.com")
+        XCTAssertEqual(candidate.email, "alice@example.com")
     }
     
-    func testSaveChangesFailureDueToInvalidEmail() async {
-        let candidate = Candidate(id: "1", firstName: "Alice", lastName: "Smith", email: "invalid-email", phone: "0123456789", note: "Note", linkedinURL: "https://linkedin.com/in/alice", isFavorite: false)
+    func testSaveChangesFailureDueToInvalidEmail() async throws {
+        var candidate = try candidateFromJSON()
+        candidate.email = "invalid-email"
+        
+        let candidateBinding = Binding<Candidate>(
+            get: { candidate },
+            set: { candidate = $0 }
+        )
         let mockService = MockVitesseRHService()
-        let viewModel = EditingViewModel(candidate: candidate, token: "dummy", candidateId: candidate.id, service: mockService)
+        let viewModel = EditingViewModel(candidate: candidateBinding, token: "dummy", candidateId: candidate.id, service: mockService)
         
         await viewModel.saveChanges()
-        XCTAssertEqual(viewModel.errorMessage, "Invalid email format.")
+        XCTAssertEqual(viewModel.errorMessage, VitesseRHError.validation(.invalidEmail).localizedDescription)
     }
     
-    func testSaveChangesFailureDueToInvalidPhone() async {
-        let candidate = Candidate(id: "1", firstName: "Alice", lastName: "Smith", email: "alice@example.com", phone: "invalid-phone", note: "Note", linkedinURL: "https://linkedin.com/in/alice", isFavorite: false)
+    func testSaveChangesFailureDueToInvalidPhone() async throws {
+        var candidate = try candidateFromJSON()
+        candidate.phone = "invalid-phone"
+        
+        let candidateBinding = Binding<Candidate>(
+            get: { candidate },
+            set: { candidate = $0 }
+        )
         let mockService = MockVitesseRHService()
-        let viewModel = EditingViewModel(candidate: candidate, token: "dummy", candidateId: candidate.id, service: mockService)
+        let viewModel = EditingViewModel(candidate: candidateBinding, token: "dummy", candidateId: candidate.id, service: mockService)
         
         await viewModel.saveChanges()
-        XCTAssertEqual(viewModel.errorMessage, "Invalid phone number format.")
+        XCTAssertEqual(viewModel.errorMessage, VitesseRHError.validation(.invalidPhone).localizedDescription)
     }
     
-    func testSaveChangesFailureDueToInvalidLinkedInURL() async {
-        let candidate = Candidate(id: "1", firstName: "Alice", lastName: "Smith", email: "alice@example.com", phone: "0123456789", note: "Note", linkedinURL: "not-a-url", isFavorite: false)
+    func testSaveChangesFailureDueToInvalidLinkedInURL() async throws {
+        var candidate = try candidateFromJSON()
+        candidate.phone = "0123456789"
+        candidate.linkedinURL = "not-a-url"
+        
+        let candidateBinding = Binding<Candidate>(
+            get: { candidate },
+            set: { candidate = $0 }
+        )
         let mockService = MockVitesseRHService()
-        let viewModel = EditingViewModel(candidate: candidate, token: "dummy", candidateId: candidate.id, service: mockService)
+        let viewModel = EditingViewModel(candidate: candidateBinding, token: "dummy", candidateId: candidate.id, service: mockService)
         
         await viewModel.saveChanges()
-        XCTAssertEqual(viewModel.errorMessage, "The LinkedIn URL provided is invalid. Please check the URL format.")
+        XCTAssertEqual(viewModel.errorMessage, VitesseRHError.validation(.invalidLinkedInURL).localizedDescription)
     }
     
-    func testSaveChangesFailureDueToServiceError() async {
-        let candidate = Candidate(id: "1", firstName: "Alice", lastName: "Smith", email: "alice@example.com", phone: "0123456789", note: "Note", linkedinURL: "https://linkedin.com/in/alice", isFavorite: false)
+    func testSaveChangesFailureDueToServiceError() async throws {
+        var candidate = try candidateFromJSON()
+        candidate.email = "alice@example.com"
+        candidate.phone = "0123456789"
+        candidate.linkedinURL = "https://linkedin.com/in/alice"
+        
+        let candidateBinding = Binding<Candidate>(
+            get: { candidate },
+            set: { candidate = $0 }
+        )
         let mockService = MockVitesseRHService()
         let error = VitesseRHError.server(.internalServerError)
         mockService.updateCandidateResult = .failure(error)
         
-        let viewModel = EditingViewModel(candidate: candidate, token: "dummy", candidateId: candidate.id, service: mockService)
+        let viewModel = EditingViewModel(candidate: candidateBinding, token: "dummy", candidateId: candidate.id, service: mockService)
         await viewModel.saveChanges()
         XCTAssertEqual(viewModel.errorMessage, error.localizedDescription)
     }

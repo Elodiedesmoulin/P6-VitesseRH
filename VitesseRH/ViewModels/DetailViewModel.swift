@@ -23,21 +23,20 @@ final class DetailViewModel: ObservableObject {
     }
 
     func toggleFavorite() {
-           candidate.isFavorite.toggle()
-                      Task {
-               let result = await service.favoriteToggle(forId: candidate.id)
-               await MainActor.run {
-                   switch result {
-                   case .success(let updatedCandidate):
-                       self.candidate = updatedCandidate
-                   case .failure(let error):
-                       self.candidate.isFavorite.toggle()
-                       self.errorMessage = error.localizedDescription
-                   }
-               }
-           }
-       }
-   
+        candidate.isFavorite.toggle()
+        Task {
+            let result = await service.favoriteToggle(forId: candidate.id)
+            await MainActor.run {
+                switch result {
+                case .success(let updatedCandidate):
+                    self.candidate = updatedCandidate
+                case .failure(let error):
+                    self.candidate.isFavorite.toggle()
+                    self.errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
     
     func fetchCandidateDetails() {
         Task {

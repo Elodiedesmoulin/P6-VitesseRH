@@ -28,7 +28,7 @@ struct CandidateDetailView: View {
                     CandidateDetailHeader(candidate: $candidate, toggleFavorite: {
                         viewModel.toggleFavorite()
                     }, isAdmin: isAdmin)
-                    .padding(.bottom, 20)  
+                    .padding(.bottom, 20)
                     
                     CandidateDetailInfo(candidate: candidate)
                     
@@ -50,7 +50,12 @@ struct CandidateDetailView: View {
                         viewModel.fetchCandidateDetails()
                     }) {
                         EditingView(
-                            viewModel: EditingViewModel(candidate: candidate, token: viewModel.token, candidateId: candidate.id, service: viewModel.service),
+                            viewModel: EditingViewModel(
+                                candidate: $candidate,
+                                token: viewModel.token,
+                                candidateId: candidate.id,
+                                service: viewModel.service
+                            ),
                             isEditing: $isEditing
                         )
                     }

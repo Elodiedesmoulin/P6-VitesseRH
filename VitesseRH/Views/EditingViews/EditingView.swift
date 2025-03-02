@@ -19,17 +19,29 @@ struct EditingView: View {
                 .padding(.bottom, 20)
             
             VStack(spacing: 15) {
-                EditableRow(label: "First Name", text: $viewModel.candidate.firstName)
-                EditableRow(label: "Last Name", text: $viewModel.candidate.lastName)
-                EditableRow(label: "Email", text: $viewModel.candidate.email)
-                EditableRow(label: "Phone", text: $viewModel.candidate.phone)
+                EditableRow(label: "First Name", text: Binding(
+                    get: { viewModel.$candidate.wrappedValue.firstName },
+                    set: { viewModel.$candidate.wrappedValue.firstName = $0 }
+                ))
+                EditableRow(label: "Last Name", text: Binding(
+                    get: { viewModel.$candidate.wrappedValue.lastName },
+                    set: { viewModel.$candidate.wrappedValue.lastName = $0 }
+                ))
+                EditableRow(label: "Email", text: Binding(
+                    get: { viewModel.$candidate.wrappedValue.email },
+                    set: { viewModel.$candidate.wrappedValue.email = $0 }
+                ))
+                EditableRow(label: "Phone", text: Binding(
+                    get: { viewModel.$candidate.wrappedValue.phone },
+                    set: { viewModel.$candidate.wrappedValue.phone = $0 }
+                ))
                 EditableRow(label: "LinkedIn", text: Binding(
-                    get: { viewModel.candidate.linkedinURL ?? "" },
-                    set: { viewModel.candidate.linkedinURL = $0 }
+                    get: { viewModel.$candidate.wrappedValue.linkedinURL ?? "" },
+                    set: { viewModel.$candidate.wrappedValue.linkedinURL = $0 }
                 ))
                 EditableRow(label: "Note", text: Binding(
-                    get: { viewModel.candidate.note ?? "" },
-                    set: { viewModel.candidate.note = $0 }
+                    get: { viewModel.$candidate.wrappedValue.note ?? "" },
+                    set: { viewModel.$candidate.wrappedValue.note = $0 }
                 ))
             }
             .padding()

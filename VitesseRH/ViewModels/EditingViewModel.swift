@@ -6,18 +6,19 @@
 //
 
 import Foundation
+import SwiftUI
 
 @MainActor
 final class EditingViewModel: ObservableObject {
     private let service: VitesseRHServiceProtocol
 
-    @Published var candidate: Candidate
-    var token: String
-    var candidateId: String
+    @Binding var candidate: Candidate
+    let token: String
+    let candidateId: String
     @Published var errorMessage: String? = nil
-    
-    init(candidate: Candidate, token: String, candidateId: String, service: VitesseRHServiceProtocol = VitesseRHService()) {
-        self.candidate = candidate
+
+    init(candidate: Binding<Candidate>, token: String, candidateId: String, service: VitesseRHServiceProtocol = VitesseRHService()) {
+        self._candidate = candidate
         self.token = token
         self.candidateId = candidateId
         self.service = service
@@ -26,24 +27,24 @@ final class EditingViewModel: ObservableObject {
     func saveChanges() async {
         errorMessage = nil
         
-        guard candidate.email.isValidEmail() else {
+        guard $candidate.wrappedValue.email.isValidEmail() else {
             self.errorMessage = VitesseRHError.validation(.invalidEmail).localizedDescription
             return
         }
-        if !candidate.phone.isEmpty && !candidate.phone.isValidFrPhone() {
+        if !$candidate.wrappedValue.phone.isEmpty && !$candidate.wrappedValue.phone.isValidFrPhone() {
             self.errorMessage = VitesseRHError.validation(.invalidPhone).localizedDescription
             return
         }
-        if let linkedinURL = candidate.linkedinURL, !linkedinURL.isEmpty, URL(string: linkedinURL)?.scheme == nil {
+        if let linkedinURL = $candidate.wrappedValue.linkedinURL, !linkedinURL.isEmpty, URL(string: linkedinURL)?.scheme == nil {
             self.errorMessage = VitesseRHError.validation(.invalidLinkedInURL).localizedDescription
             return
         }
         
-        let result = await service.updateCandidate(candidate: candidate)
+        let result = await service.updateCandidate(candidate: $candidate.wrappedValue)
         await MainActor.run {
             switch result {
             case .success(let updatedCandidate):
-                self.candidate = updatedCandidate
+                self.$candidate.wrappedValue = updatedCandidate
             case .failure(let error):
                 self.errorMessage = error.localizedDescription
             }
