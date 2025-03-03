@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+
 @main
 struct VitesseRHApp: App {
     @StateObject var viewModel = VitesseRHAppViewModel()
@@ -14,7 +15,7 @@ struct VitesseRHApp: App {
     var body: some Scene {
         WindowGroup {
             if viewModel.isLoggedIn {
-                CandidateListView()
+                CandidateListView(viewModel: viewModel.candidateListViewModel)
             } else {
                 LoginView(viewModel: viewModel.loginViewModel)
             }

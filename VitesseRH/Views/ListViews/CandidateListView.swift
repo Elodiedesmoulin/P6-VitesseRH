@@ -8,9 +8,7 @@
 import SwiftUI
 
 struct CandidateListView: View {
-    @StateObject private var viewModel = CandidateListViewModel(onSignOut: {
-        AuthenticationManager.shared.deleteAuthData()
-    })
+    @StateObject var viewModel: CandidateListViewModel
     @State private var showingCreateCandidate = false
     
     var body: some View {

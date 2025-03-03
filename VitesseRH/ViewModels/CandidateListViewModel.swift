@@ -122,3 +122,4 @@ final class CandidateListViewModel: ObservableObject {
         }
     }
 }
+
