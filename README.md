@@ -1,7 +1,5 @@
 # 🚗 Vitesse RH – Candidate Management App (Project P6)
 
-<img width="300" alt="Vitesse RH App" src="./Screenshots/vitesse-preview.png">
-
 ## Table of Contents
 
 - [Introduction](#introduction)
